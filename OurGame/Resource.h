@@ -5,12 +5,12 @@ using namespace std;
 //所有资源的路径
 namespace Resource {
     namespace Home {
-        char* const Backgroud = "Resources\\Home\\UI.bmp";
+        char* const Backgroud = "Resources\\Home\\wsc.png";
         //char* const BGM = "Resources\\Home\\3.wav";
         const D3DCOLOR SelectedColor = D3DCOLOR_XRGB(255, 128, 128);
         const D3DCOLOR UnselectedColor = D3DCOLOR_XRGB(64, 64, 64);
 
-        char* const OptionsStr[] = { "单人游戏","双人游戏","设计地图","游戏设定","关于我们" };
+        char* const OptionsStr[] = { "开始游戏","游戏设定","关于游戏" };
     }
     namespace Cursor {
         char* const Normal = "Resources\\Cursor\\光标.png";
@@ -37,11 +37,22 @@ namespace Resource {
 		char*const Something = "Resources\\Texture\\杂项.bmp";
 		char*const Tile = "Resources\\Texture\\砖.bmp";
 		char*const Player_1 = "Resources\\Texture\\wxz.png";
+		char*const Player_1_L = "Resources\\Texture\\wxzL.png";
+
 		char*const Player_2 = "Resources\\Texture\\玩家二.bmp";
 		char*const Bullet = "Resources\\Texture\\子弹.bmp";
+		char*const Bullet_mb = "Resources\\Texture\\面包.png";
+		char*const Cup = "Resources\\Texture\\奖杯.png";
 		char*const Boom1 = "Resources\\Texture\\爆炸一.bmp";
 		char*const Boom2 = "Resources\\Texture\\爆炸二.bmp";
-		char*const Enemy = "Resources\\Texture\\敌人.bmp";
+
+		char*const Enemy_EDG = "Resources\\Texture\\edg.png";
+		char*const Enemy_RNG = "Resources\\Texture\\rng.png";
+		char*const Enemy_KT = "Resources\\Texture\\kt.png";
+		char*const Enemy_C9 = "Resources\\Texture\\c9.png";
+		char*const Enemy_FNC = "Resources\\Texture\\fnc.png";
+		char*const Enemy_G2 = "Resources\\Texture\\g2.png";
+
 		char*const Award = "Resources\\Texture\\奖励.bmp";
 		char*const GameOver = "Resources\\Texture\\游戏结束.bmp";
 		char*const Shield = "Resources\\Texture\\盾牌.bmp";

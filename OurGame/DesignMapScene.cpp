@@ -54,12 +54,7 @@ bool DesignMapScene::Init()
 		ShowMessage("装载 砖 纹理失败!");
 		return false;
 	}
-	Enemy_TXTTURE = LoadTexture(Resource::Texture::Enemy, D3DCOLOR_XRGB(4, 4, 4));
-	if (!Enemy_TXTTURE)
-	{
-		ShowMessage("装载 敌人 纹理失败!");
-		return false;
-	}
+
 	Player_1 = LoadTexture(Resource::Texture::Player_1, D3DCOLOR_XRGB(0, 0, 0));
 	if (!Player_1)
 	{

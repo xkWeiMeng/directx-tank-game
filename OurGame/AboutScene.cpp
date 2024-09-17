@@ -6,9 +6,14 @@ float cx4 = 777, cx5 = 500, cx6 = 50;
 float cx7 = 2333, cx8 = 666, cx9 = 555;
 float c1=255, c2=255, c3 = 255;
 static LPD3DXFONT font;
+static LPD3DXFONT font1;
+static LPD3DXFONT IG;
 bool AboutScene::Init()
 {
-	 font = MakeFont("ËÎÌå", 50);
+	 font = MakeFont("Î¢ÈíÑÅºÚ", 20);
+	 font1 = MakeFont("Î¢ÈíÑÅºÚ", 30);
+
+	 IG = MakeFont("Î¢ÈíÑÅºÚ", 300);
     background = LoadSurface(Resource::About::Backgroud);
 	Could1 = LoadTexture(Resource::About::Cloud1, D3DCOLOR_XRGB(255, 255, 255));
 	Could2 = LoadTexture(Resource::About::Cloud2, D3DCOLOR_XRGB(255, 255, 255));
@@ -60,7 +65,7 @@ void AboutScene::Render()
     };
 
   //  d3dDev->StretchRect(Mountain, NULL, backBuffer, &source_rect, D3DTEXF_NONE);
-	Sprite_Transform_Draw(Mountain, 0, 120, 1000, 625, 0, 1, 0, 1.03, D3DCOLOR_XRGB(255, 255, 255));	
+	//Sprite_Transform_Draw(Mountain, 0, 120, 1000, 625, 0, 1, 0, 1.03, D3DCOLOR_XRGB(255, 255, 255));	
 	Sprite_Transform_Draw(Could1, cx1, 270, 200, 80, 0, 1,  0, 1.0, D3DCOLOR_XRGB(255, 255, 255));
 	Sprite_Transform_Draw(Could2, cx2, 220, 354, 144, 0, 1, 0, 1.0, D3DCOLOR_XRGB(255, 255, 255));
 	Sprite_Transform_Draw(Could3, cx3, 280, 210, 62, 0, 1,  0, 1.0, D3DCOLOR_XRGB(255, 255, 255));
@@ -72,10 +77,20 @@ void AboutScene::Render()
 	Sprite_Transform_Draw(Could1, cx7, 450, 200, 80, 0, 1, 0, 1.0, D3DCOLOR_XRGB(255, 255, 255));
 	Sprite_Transform_Draw(Could2, cx8, 350, 354, 144, 0, 1, 0, 0.5, D3DCOLOR_XRGB(255, 255, 255));
 	Sprite_Transform_Draw(Could3, cx9, 480, 210, 62, 0, 1, 0, 1.01, D3DCOLOR_XRGB(255, 255, 255));
-	string text;
-	text += "×÷Õß£ºXK|YYQ";
 
-	FontPrint(font, 0, 90 ,text, D3DCOLOR_XRGB((int)c1, (int)c2, (int)c3));
+
+	string text;
+	text += "Author:XK";
+	FontPrint(font, 0, 10 ,text, D3DCOLOR_XRGB((int)c1, (int)c2, (int)c3));
+
+	string ig;
+	ig += "I G\nNB";
+	FontPrint(IG, 320, 90, ig, D3DCOLOR_XRGB((int)c1, (int)c2, (int)c3));
+
+	text.clear();
+	text += "ÇëÎð´«²¥\nÇÖÈ¨É¾";
+	FontPrint(font1, 0, 850, text, D3DCOLOR_XRGB(255, 255, 255));
+
 	c1 -= 0.5;
 	c2 -= 0.4;
 	c3 -= 0.3;
@@ -87,22 +102,22 @@ void AboutScene::Render()
 	cx3 -= 0.31;
 	if (cx1 <= -300)
 	{
-		cx1 = Global::Window::ScreenWidth+300;
+		cx1 = Global::Window::ScreenWidth + 300;
 	}
 	if (cx2 <= -300)
 	{
-		cx2 = Global::Window::ScreenWidth+300;
+		cx2 = Global::Window::ScreenWidth + 300;
 	}
 	if (cx3 <= -300)
 	{
-		cx3 = Global::Window::ScreenWidth+300;
+		cx3 = Global::Window::ScreenWidth + 300;
 	}
 	cx4 -= 0.22;
 	cx5 -= 0.2;
 	cx6 -= 0.22;
 	if (cx4 <= -400)
 	{
-		cx4 = Global::Window::ScreenWidth+400;
+		cx4 = Global::Window::ScreenWidth + 400;
 	}
 	if (cx5 <= -400)
 	{
@@ -117,7 +132,7 @@ void AboutScene::Render()
 	cx9 -= 0.15;
 	if (cx7 <= -500)
 	{
-		cx7 = Global::Window::ScreenWidth+500;
+		cx7 = Global::Window::ScreenWidth + 500;
 	}
 	if (cx8 <= -500)
 	{
@@ -136,5 +151,6 @@ void AboutScene::Update()
 	{
 		Game_ChangeScene(GAME_STATE::Home);
 	}
+
 
 }

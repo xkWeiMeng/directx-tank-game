@@ -26,7 +26,7 @@ enum GAME_STATE
 };
 namespace Global {
     namespace Window {
-        const string GameTitle = "Our Game";
+        const string GameTitle = "IG.WXZ";
 		extern int ScreenWidth;
 		extern int ScreenHeight ;
         //窗口的坐标
@@ -47,7 +47,7 @@ namespace Global {
     }
     namespace Debug {
         //是否显示调试信息
-        const bool ShowDebugInfo = true;
+        const bool ShowDebugInfo = false;
         //当前总帧率
         extern int currentFPS;
     }

@@ -2,6 +2,8 @@
 #pragma warning(disable:4996)
 namespace GSS {
 	LPD3DXFONT font;
+	LPD3DXFONT font_s;
+
 	LPDIRECT3DSURFACE9 BlackRect = NULL;
 	LPDIRECT3DTEXTURE9 GameSettingPNG=NULL;
 	RECT mouseRect;
@@ -28,6 +30,8 @@ using namespace GSS;
 bool GameSettingScene::Init()
 {
 	font = MakeFont("微软雅黑", 64);
+	font_s = MakeFont("微软雅黑", 30);
+
 	GameSettingPNG = LoadTexture(Resource::Texture::GameSetting, D3DCOLOR_XRGB(255, 255, 255));
 	if (!GameSettingPNG)
 	{
@@ -85,7 +89,7 @@ void GSS::ShowSetting(int x, int y)
 {
 	char buf[10];
 	const int Ymove = 100;
-	FontPrint(font, x-128, y, "玩家一：");
+	FontPrint(font_s, 20, y, "可用鼠标选择，选中后按下需要替换的键\n（默认：使用方向键移动，X键发射面包）");
 	FontPrint(font, x, y + 1 * Ymove, "上：");
 	FontPrint(font, x, y + 2 * Ymove, "下：");
 	FontPrint(font, x, y + 3 * Ymove, "左：");
@@ -103,24 +107,24 @@ void GSS::ShowSetting(int x, int y)
 	itoa(Global::PlayerControl::Player1[4], buf, 10);
 	FontPrint(font, x + 160, y + 5 * Ymove, buf);
 
-	const int Xmove = 400;
-	FontPrint(font, x + Xmove-128, y, "玩家二：");
-	FontPrint(font, x + Xmove, y + 1 * Ymove, "上：");
-	FontPrint(font, x + Xmove, y + 2 * Ymove, "下：");
-	FontPrint(font, x + Xmove, y + 3 * Ymove, "左：");
-	FontPrint(font, x + Xmove, y + 4 * Ymove, "右：");
-	FontPrint(font, x + Xmove, y + 5 * Ymove, "攻击：");
+	//const int Xmove = 400;
+	//FontPrint(font, x + Xmove-128, y, "玩家二：");
+	//FontPrint(font, x + Xmove, y + 1 * Ymove, "上：");
+	//FontPrint(font, x + Xmove, y + 2 * Ymove, "下：");
+	//FontPrint(font, x + Xmove, y + 3 * Ymove, "左：");
+	//FontPrint(font, x + Xmove, y + 4 * Ymove, "右：");
+	//FontPrint(font, x + Xmove, y + 5 * Ymove, "攻击：");
 
-	itoa(Global::PlayerControl::Player2[0], buf, 10);
-	FontPrint(font, x + 96 + Xmove, y + 1 * Ymove, buf);
-	itoa(Global::PlayerControl::Player2[1], buf, 10);
-	FontPrint(font, x + 96 + Xmove, y + 2 * Ymove, buf);
-	itoa(Global::PlayerControl::Player2[2], buf, 10);
-	FontPrint(font, x + 96 + Xmove, y + 3 * Ymove, buf);
-	itoa(Global::PlayerControl::Player2[3], buf, 10);
-	FontPrint(font, x + 96 + Xmove, y + 4 * Ymove, buf);
-	itoa(Global::PlayerControl::Player2[4], buf, 10);
-	FontPrint(font, x + 160 + Xmove, y + 5 * Ymove, buf);
+	//itoa(Global::PlayerControl::Player2[0], buf, 10);
+	//FontPrint(font, x + 96 + Xmove, y + 1 * Ymove, buf);
+	//itoa(Global::PlayerControl::Player2[1], buf, 10);
+	//FontPrint(font, x + 96 + Xmove, y + 2 * Ymove, buf);
+	//itoa(Global::PlayerControl::Player2[2], buf, 10);
+	//FontPrint(font, x + 96 + Xmove, y + 3 * Ymove, buf);
+	//itoa(Global::PlayerControl::Player2[3], buf, 10);
+	//FontPrint(font, x + 96 + Xmove, y + 4 * Ymove, buf);
+	//itoa(Global::PlayerControl::Player2[4], buf, 10);
+	//FontPrint(font, x + 160 + Xmove, y + 5 * Ymove, buf);
 
 	FontPrint(font, 384, 832, "音乐：");
 	if (Global::Sound::SoundSwicth)

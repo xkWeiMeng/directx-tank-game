@@ -9,7 +9,7 @@ using namespace Global::Window;
 
 bool HomeScene::Create_Background()
 {
-    background = LoadSurface(Resource::Home::Backgroud);
+    background = LoadTexture(Resource::Home::Backgroud, D3DCOLOR_XRGB(255, 255, 255));
     return background != NULL;
 }
 
@@ -21,7 +21,9 @@ void HomeScene::Draw_Background()
         ScreenWidth,
         ScreenHeight
     };
-    d3dDev->StretchRect(background, NULL, backBuffer, &source_rect, D3DTEXF_NONE);
+
+	Sprite_Transform_Draw(background, 150, 150, 686, 239,
+		0, 1, 0, 1, D3DCOLOR_XRGB(255, 255, 255));
 }
 
 bool HomeScene::Init()
@@ -61,12 +63,12 @@ void HomeScene::Update()
     if (Key_Up(DIK_DOWN))
     {
         HomeScene::choose++;
-        HomeScene::choose %= 5;
+        HomeScene::choose %= 3;
     }
     if (Key_Up(DIK_UP))
     {
-        HomeScene::choose = HomeScene::choose > 0 ? HomeScene::choose - 1 : 4;
-        HomeScene::choose %= 5;
+        HomeScene::choose = HomeScene::choose > 0 ? HomeScene::choose - 1 : 2;
+        HomeScene::choose %= 3;
     }
     if (Key_Up(DIK_SPACE))
     {
@@ -75,16 +77,12 @@ void HomeScene::Update()
         switch (choose)
         {
         case 0:
-        case 1://双人游戏和单人游戏的接口一样
 			Game_ChangeScene(GAME_STATE::SinglePlayer);
             break;
-		case 2:
-			Game_ChangeScene(GAME_STATE::DesignMap);
-			break;
-		case 3:
+		case 1:
 			Game_ChangeScene(GAME_STATE::GameSatting);
 			break;
-        case 4:
+        case 2:
             Game_ChangeScene(GAME_STATE::About);
             break;
 
@@ -96,7 +94,7 @@ void HomeScene::Update()
 void HomeScene::Render()
 {
     HomeScene::Draw_Background();
-    for (int i = 0; i < 5; i++) {
-        FontPrint(font, 450, 700 + i * 40, Resource::Home::OptionsStr[i], i == HomeScene::choose ? Resource::Home::SelectedColor : Resource::Home::UnselectedColor);
+    for (int i = 0; i < 3; i++) {
+        FontPrint(font, 450, 500 + i * 40, Resource::Home::OptionsStr[i], i == HomeScene::choose ? Resource::Home::SelectedColor : Resource::Home::UnselectedColor);
     }
 }

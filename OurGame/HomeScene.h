@@ -13,7 +13,7 @@ public:
     void Render();
 
 private:
-    LPDIRECT3DSURFACE9 background = NULL;
+	LPDIRECT3DTEXTURE9 background = NULL;
 
     LPD3DXFONT font;
     CSound *bgm;
