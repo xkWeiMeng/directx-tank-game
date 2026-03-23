@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{BCB2CDE3-BA5B-45EE-BBCF-ACBA90D86185}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>OurGame</RootNamespace>
+    <RootNamespace>TankGame</RootNamespace>
     <ProjectName>Tank</ProjectName>
     <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
