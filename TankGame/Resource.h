@@ -1,8 +1,8 @@
-#pragma once
+ï»¿#pragma once
 #include<iostream>
 #include"DirectX.h";
 using namespace std;
-//ËùÓĞ×ÊÔ´µÄÂ·¾¶
+//æ‰€æœ‰èµ„æºçš„è·¯å¾„
 namespace Resource {
     namespace Home {
         char* const Backgroud = "Resources\\Home\\UI.bmp";
@@ -10,43 +10,43 @@ namespace Resource {
         const D3DCOLOR SelectedColor = D3DCOLOR_XRGB(255, 128, 128);
         const D3DCOLOR UnselectedColor = D3DCOLOR_XRGB(64, 64, 64);
 
-        char* const OptionsStr[] = { "µ¥ÈËÓÎÏ·","Ë«ÈËÓÎÏ·","Éè¼ÆµØÍ¼","ÓÎÏ·Éè¶¨","¹ØÓÚÎÒÃÇ" };
+        char* const OptionsStr[] = { "å•äººæ¸¸æˆ","åŒäººæ¸¸æˆ","è®¾è®¡åœ°å›¾","æ¸¸æˆè®¾å®š","å…³äºæˆ‘ä»¬" };
     }
     namespace Cursor {
-        char* const Normal = "Resources\\Cursor\\¹â±ê.png";
+        char* const Normal = "Resources\\Cursor\\å…‰æ ‡.png";
     }
     namespace About {
         char* const Backgroud = "Resources\\About\\Background.jpg";
-		char* const BKG = "Resources\\About\\É½¾°.bmp";
-		char* const Cloud1 = "Resources\\About\\ÔÆ1.png";
-		char* const Cloud2 = "Resources\\About\\ÔÆ2.png";
-		char* const Cloud3 = "Resources\\About\\ÔÆ3.png";
-		char* const Feiting = "Resources\\About\\·ÉÍ§.tga";
+		char* const BKG = "Resources\\About\\å±±æ™¯.bmp";
+		char* const Cloud1 = "Resources\\About\\äº‘1.png";
+		char* const Cloud2 = "Resources\\About\\äº‘2.png";
+		char* const Cloud3 = "Resources\\About\\äº‘3.png";
+		char* const Feiting = "Resources\\About\\é£è‰‡.tga";
 
     }
 	namespace Sound_Rescource {
-		char* const Start = "Resources\\Sound\\¿ªÊ¼1.wav";
-		char*const Moving = "Resources\\Sound\\Ì¹¿ËÒÆ¶¯.wav";
-		char*const Stop = "Resources\\Sound\\Ì¹¿ËÍ£Ö¹ÒÆ¶¯.wav";
-		char*const GameOver = "Resources\\Sound\\ÓÎÏ·½áÊø.aif";
+		char* const Start = "Resources\\Sound\\å¼€å§‹1.wav";
+		char*const Moving = "Resources\\Sound\\å¦å…‹ç§»åŠ¨.wav";
+		char*const Stop = "Resources\\Sound\\å¦å…‹åœæ­¢ç§»åŠ¨.wav";
+		char*const GameOver = "Resources\\Sound\\æ¸¸æˆç»“æŸ.aif";
 		char*const BGM = "Resources\\Sound\\bgm.wav";
-		char*const PlayerBoom = "Resources\\Sound\\±¬Õ¨.wav";
+		char*const PlayerBoom = "Resources\\Sound\\çˆ†ç‚¸.wav";
 	}
 	namespace Texture {
-		char*const Flag = "Resources\\Texture\\Æì×Ó.bmp";
-		char*const Something = "Resources\\Texture\\ÔÓÏî.bmp";
-		char*const Tile = "Resources\\Texture\\×©.bmp";
+		char*const Flag = "Resources\\Texture\\æ——å­.bmp";
+		char*const Something = "Resources\\Texture\\æ‚é¡¹.bmp";
+		char*const Tile = "Resources\\Texture\\ç –.bmp";
 		char*const Player_1 = "Resources\\Texture\\wxz.png";
-		char*const Player_2 = "Resources\\Texture\\Íæ¼Ò¶ş.bmp";
-		char*const Bullet = "Resources\\Texture\\×Óµ¯.bmp";
-		char*const Boom1 = "Resources\\Texture\\±¬Õ¨Ò».bmp";
-		char*const Boom2 = "Resources\\Texture\\±¬Õ¨¶ş.bmp";
-		char*const Enemy = "Resources\\Texture\\µĞÈË.bmp";
-		char*const Award = "Resources\\Texture\\½±Àø.bmp";
-		char*const GameOver = "Resources\\Texture\\ÓÎÏ·½áÊø.bmp";
-		char*const Shield = "Resources\\Texture\\¶ÜÅÆ.bmp";
-		char*const Hole = "Resources\\Texture\\¿×.bmp";
-		char*const Number = "Resources\\Texture\\Êı×Ö.bmp";
+		char*const Player_2 = "Resources\\Texture\\ç©å®¶äºŒ.bmp";
+		char*const Bullet = "Resources\\Texture\\å­å¼¹.bmp";
+		char*const Boom1 = "Resources\\Texture\\çˆ†ç‚¸ä¸€.bmp";
+		char*const Boom2 = "Resources\\Texture\\çˆ†ç‚¸äºŒ.bmp";
+		char*const Enemy = "Resources\\Texture\\æ•Œäºº.bmp";
+		char*const Award = "Resources\\Texture\\å¥–åŠ±.bmp";
+		char*const GameOver = "Resources\\Texture\\æ¸¸æˆç»“æŸ.bmp";
+		char*const Shield = "Resources\\Texture\\ç›¾ç‰Œ.bmp";
+		char*const Hole = "Resources\\Texture\\å­”.bmp";
+		char*const Number = "Resources\\Texture\\æ•°å­—.bmp";
 		char*const GameSetting = "Resources\\Texture\\GameSetting.png";
 	}
 }

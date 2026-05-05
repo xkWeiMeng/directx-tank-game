@@ -1,4 +1,4 @@
-#include "GameSettingScene.h"
+ï»¿#include "GameSettingScene.h"
 #pragma warning(disable:4996)
 namespace GSS {
 	LPD3DXFONT font;
@@ -27,11 +27,11 @@ namespace GSS {
 using namespace GSS;
 bool GameSettingScene::Init()
 {
-	font = MakeFont("Î¢ÈíÑÅºÚ", 64);
+	font = MakeFont("å¾®è½¯é›…é»‘", 64);
 	GameSettingPNG = LoadTexture(Resource::Texture::GameSetting, D3DCOLOR_XRGB(255, 255, 255));
 	if (!GameSettingPNG)
 	{
-		ShowMessage("×°ÔØ ÉèÖÃ±³¾° ÎÆÀíÊ§°Ü!");
+		ShowMessage("è£…è½½ è®¾ç½®èƒŒæ™¯ çº¹ç†å¤±è´¥!");
 		return false;
 	}
 	d3dDev->CreateOffscreenPlainSurface(
@@ -86,12 +86,12 @@ void GSS::ShowSetting(int x, int y)
 {
 	char buf[10];
 	const int Ymove = 100;
-	FontPrint(font, x-128, y, "Íæ¼ÒÒ»£º");
-	FontPrint(font, x, y + 1 * Ymove, "ÉÏ£º");
-	FontPrint(font, x, y + 2 * Ymove, "ÏÂ£º");
-	FontPrint(font, x, y + 3 * Ymove, "×ó£º");
-	FontPrint(font, x, y + 4 * Ymove, "ÓÒ£º");
-	FontPrint(font, x, y + 5 * Ymove, "¹¥»÷£º");
+	FontPrint(font, x-128, y, "çŽ©å®¶ä¸€ï¼š");
+	FontPrint(font, x, y + 1 * Ymove, "ä¸Šï¼š");
+	FontPrint(font, x, y + 2 * Ymove, "ä¸‹ï¼š");
+	FontPrint(font, x, y + 3 * Ymove, "å·¦ï¼š");
+	FontPrint(font, x, y + 4 * Ymove, "å³ï¼š");
+	FontPrint(font, x, y + 5 * Ymove, "æ”»å‡»ï¼š");
 
 	itoa(Global::PlayerControl::Player1[0], buf, 10);
 	FontPrint(font, x + 96, y + 1 * Ymove, buf);
@@ -105,12 +105,12 @@ void GSS::ShowSetting(int x, int y)
 	FontPrint(font, x + 160, y + 5 * Ymove, buf);
 
 	const int Xmove = 400;
-	FontPrint(font, x + Xmove-128, y, "Íæ¼Ò¶þ£º");
-	FontPrint(font, x + Xmove, y + 1 * Ymove, "ÉÏ£º");
-	FontPrint(font, x + Xmove, y + 2 * Ymove, "ÏÂ£º");
-	FontPrint(font, x + Xmove, y + 3 * Ymove, "×ó£º");
-	FontPrint(font, x + Xmove, y + 4 * Ymove, "ÓÒ£º");
-	FontPrint(font, x + Xmove, y + 5 * Ymove, "¹¥»÷£º");
+	FontPrint(font, x + Xmove-128, y, "çŽ©å®¶äºŒï¼š");
+	FontPrint(font, x + Xmove, y + 1 * Ymove, "ä¸Šï¼š");
+	FontPrint(font, x + Xmove, y + 2 * Ymove, "ä¸‹ï¼š");
+	FontPrint(font, x + Xmove, y + 3 * Ymove, "å·¦ï¼š");
+	FontPrint(font, x + Xmove, y + 4 * Ymove, "å³ï¼š");
+	FontPrint(font, x + Xmove, y + 5 * Ymove, "æ”»å‡»ï¼š");
 
 	itoa(Global::PlayerControl::Player2[0], buf, 10);
 	FontPrint(font, x + 96 + Xmove, y + 1 * Ymove, buf);
@@ -123,11 +123,11 @@ void GSS::ShowSetting(int x, int y)
 	itoa(Global::PlayerControl::Player2[4], buf, 10);
 	FontPrint(font, x + 160 + Xmove, y + 5 * Ymove, buf);
 
-	FontPrint(font, 384, 832, "ÒôÀÖ£º");
+	FontPrint(font, 384, 832, "éŸ³ä¹ï¼š");
 	if (Global::Sound::SoundSwicth)
-		FontPrint(font, 544, 832, "¿ª");
+		FontPrint(font, 544, 832, "å¼€");
 	else
-		FontPrint(font, 544, 832, "¹Ø");
+		FontPrint(font, 544, 832, "å…³");
 
 }
 
@@ -137,7 +137,7 @@ bool GSS::WritePlayerSettingIbHD()
 	ofstream out("GameSet.set", ios::out | ios::binary);
 	if (!out.is_open())
 	{
-		ShowMessage("ÎÞ·¨´ò¿ªÓÎÏ·µÄÉèÖÃÎÄ¼þ");
+		ShowMessage("æ— æ³•æ‰“å¼€æ¸¸æˆçš„è®¾ç½®æ–‡ä»¶");
 		out.close();
 		return false;
 	}
@@ -157,7 +157,7 @@ bool GSS::WritePlayerSettingIbHD()
 	out.close();
 	return true;
 }
-//É¨Ãè¼üÅÌ°´¼üÐÅÏ¢
+//æ‰«æé”®ç›˜æŒ‰é”®ä¿¡æ¯
 int GSS::ReadK_B()
 {
 
@@ -427,12 +427,12 @@ int GSS::ReadK_B()
 
 	return -1;
 }
-//Ê¹ÓÃÊó±ê½øÐÐÑ¡Ôñ
+//ä½¿ç”¨é¼ æ ‡è¿›è¡Œé€‰æ‹©
 void GSS::UsingMouseChoose(RECT&mrect)
 {
 	RECT rect, nothing;
 	rect = { 296,200,424,264 };
-	//ÉèÖÃÍæ¼ÒÒ»
+	//è®¾ç½®çŽ©å®¶ä¸€
 	if (IntersectRect(&nothing, &rect, &mrect))
 		Choose = 0;
 	rect = { 296,300,424,364 };
@@ -447,7 +447,7 @@ void GSS::UsingMouseChoose(RECT&mrect)
 	rect = { 296,600,424,664 };
 	if (IntersectRect(&nothing, &rect, &mrect))
 		Choose = 4;
-	//ÉèÖÃÍæ¼Ò¶þ
+	//è®¾ç½®çŽ©å®¶äºŒ
 	rect = { 696,200,824,264 };
 	if (IntersectRect(&nothing, &rect, &mrect))
 		Choose = 5;
@@ -463,13 +463,13 @@ void GSS::UsingMouseChoose(RECT&mrect)
 	rect = { 696,600,824,664 };
 	if (IntersectRect(&nothing, &rect, &mrect))
 		Choose = 9;
-	//ÉèÖÃÒôÀÖ¿ª¹Ø
+	//è®¾ç½®éŸ³ä¹å¼€å…³
 	rect = { 544,832,608,896 };
 	if (IntersectRect(&nothing, &rect, &mrect))
 		Global::Sound::SoundSwicth= !Global::Sound::SoundSwicth;
 
 }
-//ÏÖÔÚµÄÉèÖÃ½¹µã
+//çŽ°åœ¨çš„è®¾ç½®ç„¦ç‚¹
 void GSS::NowSettingFoucs()
 {
 	int buf;
@@ -493,7 +493,7 @@ void GSS::NowSettingFoucs()
 
 	}
 }
-//ÓÃºÚ¿òÍ¹ÏÔÏÖÔÚÑ¡ÔñµÄÑ¡Ïî
+//ç”¨é»‘æ¡†å‡¸æ˜¾çŽ°åœ¨é€‰æ‹©çš„é€‰é¡¹
 void GSS::DrawChooseBlackRect()
 {
 	switch (Choose)
@@ -533,7 +533,7 @@ void GSS::DrawChooseBlackRect()
 		break;
 	}
 }
-//»­ºÚÉ«·½¿ò
+//ç”»é»‘è‰²æ–¹æ¡†
 void GSS::DrawBlackRect(int x, int y)
 {
 	RECT rect;
@@ -547,7 +547,7 @@ void GSS::DrawBlackRect(int x, int y)
 	d3dDev->StretchRect(BlackRect, NULL, backBuffer, &rect, D3DTEXF_NONE);
 
 }
-//Ìî³äRECT
+//å¡«å……RECT
 void GSS::FillRect(RECT&rect, long l, long r, long t, long b)
 {
 	rect.left = l;

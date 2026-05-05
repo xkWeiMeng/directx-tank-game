@@ -1,18 +1,18 @@
-#pragma once
+﻿#pragma once
 #include"DirectX.h"
 #include"DirectSound.h"
 
-//���г����Ļ��࣬����ͳһ�ӿڵ���
+//所有场景的基类，用于统一接口调用
 class Scene
 {
 public:
     virtual ~Scene() {};
-    //�����ĳ�ʼ�����������л�����ʱ�ᱻִ��һ��
+    //场景的初始化函数，在切换场景时会被执行一次
     virtual bool Init() { return true; };
-    //�����Ĺرպ��������л�����ʱ�ᱻִ��һ��
+    //场景的关闭函数，在切换场景时会被执行一次
     virtual void End() {};
-    //��������Ⱦ����
+    //场景的渲染函数
     virtual void Render() {};
-    //�������߼����º���
+    //场景的逻辑更新函数
     virtual void Update() {};
 };

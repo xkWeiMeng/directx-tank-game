@@ -1,4 +1,4 @@
-#include "AboutScene.h"
+ï»¿#include "AboutScene.h"
 #include"DirectX.h"
 #include"GameMain.h"
 float cx1 = 150, cx2 = 200, cx3 = 300;
@@ -8,7 +8,7 @@ float c1=255, c2=255, c3 = 255;
 static LPD3DXFONT font;
 bool AboutScene::Init()
 {
-	 font = MakeFont("ËÎÌå", 50);
+	 font = MakeFont("å®‹ä½“", 50);
     background = LoadSurface(Resource::About::Backgroud);
 	Could1 = LoadTexture(Resource::About::Cloud1, D3DCOLOR_XRGB(255, 255, 255));
 	Could2 = LoadTexture(Resource::About::Cloud2, D3DCOLOR_XRGB(255, 255, 255));
@@ -78,7 +78,7 @@ void AboutScene::Render()
 	Sprite_Transform_Draw(Could2, cx8, 350, 354, 144, 0, 1, 0, 0.5, D3DCOLOR_XRGB(255, 255, 255));
 	Sprite_Transform_Draw(Could3, cx9, 480, 210, 62, 0, 1, 0, 1.01, D3DCOLOR_XRGB(255, 255, 255));
 	string text;
-	text += "×÷Õß£ºXK|YYQ";
+	text += "ä½œè€…ï¼šXK|YYQ";
 
 	FontPrint(font, 0, 90 ,text, D3DCOLOR_XRGB((int)c1, (int)c2, (int)c3));
 	c1 -= 0.5;

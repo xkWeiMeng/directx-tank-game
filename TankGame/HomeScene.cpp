@@ -1,4 +1,4 @@
-#include "HomeScene.h"
+ï»¿#include "HomeScene.h"
 #include "Global.h"
 #include "DirectX.h"
 #include"GameMain.h"
@@ -26,18 +26,18 @@ void HomeScene::Draw_Background()
 
 bool HomeScene::Init()
 {
-    OutputDebugString("»¶Ó­³¡¾°¿ªÊ¼³õÊ¼»¯\n");
+    OutputDebugString("æ¬¢è¿åœºæ™¯å¼€å§‹åˆå§‹åŒ–\n");
     if (!HomeScene::Create_Background())
     {
-        ShowMessage("±³¾°Í¼ÔØÈëÊ§°Ü");
+        ShowMessage("èƒŒæ™¯å›¾è½½å…¥å¤±è´¥");
         return false;
     }
 
     HomeScene::choose = 0;
-    HomeScene::font = MakeFont("Î¢ÈíÑÅºÚ", 32);
-    //DXSound×é¼şÊÇÈí½âÂë£¬¿âÀïÔİÊ±Ö»Ö§³Öwav
+    HomeScene::font = MakeFont("å¾®è½¯é›…é»‘", 32);
+    //DXSoundç»„ä»¶æ˜¯è½¯è§£ç ï¼Œåº“é‡Œæš‚æ—¶åªæ”¯æŒwav
     //if (bgm = LoadSound(Resource::Home::BGM), bgm == NULL) {
-        //ShowMessage("BGMÔØÈëÊ§°Ü");
+        //ShowMessage("BGMè½½å…¥å¤±è´¥");
         //return false;
     //}
     //LoopSound(bgm);
@@ -47,7 +47,7 @@ bool HomeScene::Init()
 }
 void HomeScene::End()
 {
-    //ÊÍ·Å±³¾°Í¼
+    //é‡Šæ”¾èƒŒæ™¯å›¾
     background->Release();
     //delete bgm;
 }
@@ -55,7 +55,7 @@ void HomeScene::Update()
 {
     //if (Mouse_Button(MLButton))
     //{
-    //    OutputDebugString("×ó¼üµ¥»÷");
+    //    OutputDebugString("å·¦é”®å•å‡»");
     //}
 
     if (Key_Up(DIK_DOWN))

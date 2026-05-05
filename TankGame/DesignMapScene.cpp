@@ -1,4 +1,4 @@
-#include "DesignMapScene.h"
+ï»¿#include "DesignMapScene.h"
 using namespace std;
 namespace DMS {
 	int Map[13][13];
@@ -33,8 +33,8 @@ bool DesignMapScene::Init()
 	NowMyChoose = 1;
 	IsDesigning = false;
 	HRESULT result;
-	font = MakeFont("Î¢ÈíÑÅºÚ", 86);
-	NumFont=MakeFont("Î¢ÈíÑÅºÚ", 24);
+	font = MakeFont("å¾®è½¯é›…é»‘", 86);
+	NumFont=MakeFont("å¾®è½¯é›…é»‘", 24);
 	result = d3dDev->CreateOffscreenPlainSurface(
 		100,
 		100,
@@ -45,31 +45,31 @@ bool DesignMapScene::Init()
 	);
 	if (result != D3D_OK)
 	{
-		ShowMessage("ºÚÉ«-¸ñ×Ó ³õÊ¼»¯Ê§°Ü£¡");
+		ShowMessage("é»‘è‰²-æ ¼å­ åˆå§‹åŒ–å¤±è´¥ï¼");
 		return false;
 	}
 	Tile = LoadTexture(Resource::Texture::Tile, D3DCOLOR_XRGB(4, 4, 4));
 	if (!Tile)
 	{
-		ShowMessage("×°ÔØ ×© ÎÆÀíÊ§°Ü!");
+		ShowMessage("è£…è½½ ç – çº¹ç†å¤±è´¥!");
 		return false;
 	}
 	Enemy_TXTTURE = LoadTexture(Resource::Texture::Enemy, D3DCOLOR_XRGB(4, 4, 4));
 	if (!Enemy_TXTTURE)
 	{
-		ShowMessage("×°ÔØ µĞÈË ÎÆÀíÊ§°Ü!");
+		ShowMessage("è£…è½½ æ•Œäºº çº¹ç†å¤±è´¥!");
 		return false;
 	}
 	Player_1 = LoadTexture(Resource::Texture::Player_1, D3DCOLOR_XRGB(0, 0, 0));
 	if (!Player_1)
 	{
-		ShowMessage("×°ÔØ Ö÷Íæ¼Ò ÎÆÀíÊ§°Ü!");
+		ShowMessage("è£…è½½ ä¸»ç©å®¶ çº¹ç†å¤±è´¥!");
 		return false;
 	}
 	Player_2 = LoadTexture(Resource::Texture::Player_2, D3DCOLOR_XRGB(0, 0, 0));
 	if (!Player_2)
 	{
-		ShowMessage("×°ÔØ Íæ¼Ò¶ş ÎÆÀíÊ§°Ü!");
+		ShowMessage("è£…è½½ ç©å®¶äºŒ çº¹ç†å¤±è´¥!");
 		return false;
 	}
 
@@ -94,7 +94,7 @@ void DesignMapScene::End()
 void DesignMapScene::Update()
 {
 	int mX, mY;
-	//±à¼­¿ªÊ¼
+	//ç¼–è¾‘å¼€å§‹
 	if(IsDesigning)
 	{
 		if (Mouse_Button(MLButton))
@@ -113,7 +113,7 @@ void DesignMapScene::Update()
 			if (mX >= 0 && mY >= 0 && mX <= 12 && mY <= 12)
 				Map[mY][mX] = 0;
 		}
-		//»Ø³µ¼ü±£´æµØÍ¼²¢ÍË»ØÖ÷Ò³Ãæ
+		//å›è½¦é”®ä¿å­˜åœ°å›¾å¹¶é€€å›ä¸»é¡µé¢
 		if (Key_Up(DIK_RETURN))
 		{		
 			WriteMapToHD(FileNameBuf);
@@ -184,7 +184,7 @@ void DesignMapScene::Update()
 
 		}
 	}
-	//È·ÈÏÎÄ¼şÃû
+	//ç¡®è®¤æ–‡ä»¶å
 	else
 	{
 		DesignMapName();
@@ -203,7 +203,7 @@ void DesignMapScene::Render()
 	{			
 		DrawNet();
 		DrawMap();
-		//»­µ±Ç°Ñ¡ÔñµÄµØÍ¼¿é²¢¼ÓºÚ·½¿òÍ¹ÏÔ
+		//ç”»å½“å‰é€‰æ‹©çš„åœ°å›¾å—å¹¶åŠ é»‘æ–¹æ¡†å‡¸æ˜¾
 		DrawMapPiece(NowMyChoose, mousePoint.x+10, mousePoint.y+20);
 		DrawBlackRect(mousePoint.x+10, mousePoint.y+20);
 		DrawMapPieceChoose(MapPieceChoose);
@@ -212,7 +212,7 @@ void DesignMapScene::Render()
 	else
 	{
 		d3dDev->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
-		FontPrint(font, 128, 400, "µØÍ¼Ãû³Æ£º");
+		FontPrint(font, 128, 400, "åœ°å›¾åç§°ï¼š");
 		if(FileNameBuf.length()!=0)
 		FontPrint(font, 458, 400, FileNameBuf);
 	}
@@ -243,7 +243,7 @@ void DMS::DesignMapName()
 		buf += ".map";
 		ifstream find(buf);
 		if (find.is_open()) {
-			ShowMessage("ÒÑÓĞµØÍ¼Ê¹ÓÃ¸ÃÃû³Æ¡£");
+			ShowMessage("å·²æœ‰åœ°å›¾ä½¿ç”¨è¯¥åç§°ã€‚");
 			FileNameBuf.clear();
 		}
 		else {
@@ -261,7 +261,7 @@ void DMS::DesignMapName()
 		FileNameBuf.push_back(cbuf);
 
 }
-//¶ÁÈ¡¼üÅÌ°´¼üĞÅÏ¢
+//è¯»å–é”®ç›˜æŒ‰é”®ä¿¡æ¯
 char DMS::ReadK_B()
 {
 	if (Key_Up(DIK_BACK))
@@ -344,7 +344,7 @@ char DMS::ReadK_B()
 
 	return 0;
 }
-//Ğ´µ±Ç°µØÍ¼ĞÅÏ¢µ½Ó²ÅÌ
+//å†™å½“å‰åœ°å›¾ä¿¡æ¯åˆ°ç¡¬ç›˜
 bool DMS::WriteMapToHD(string filename)
 {
 	char buf;
@@ -368,7 +368,7 @@ bool DMS::WriteMapToHD(string filename)
 	return 0;
 }
 
-//Ìî³äRECT
+//å¡«å……RECT
 void DMS::FillRect(RECT&rect, long l, long r , long t, long b)
 {
 	rect.left = l;
@@ -377,7 +377,7 @@ void DMS::FillRect(RECT&rect, long l, long r , long t, long b)
 	rect.bottom = b;
 }
 
-//»­¸¨ÖúÍø¸ñ
+//ç”»è¾…åŠ©ç½‘æ ¼
 void DMS::DrawNet()
 {
 	RECT rect;
@@ -406,7 +406,7 @@ void DMS::DrawNet()
 
 }
 
-//»­µØÍ¼¿éÑ¡Ïî
+//ç”»åœ°å›¾å—é€‰é¡¹
 void DMS::DrawMapPieceChoose(int choose)
 {
 	switch (choose)
@@ -629,7 +629,7 @@ void DMS::DrawMapPiece(int choose,int x,int y)
 	}
 
 }
-//ÓÎÏ·µØÍ¼»æ»­º¯Êı       
+//æ¸¸æˆåœ°å›¾ç»˜ç”»å‡½æ•°       
 void DMS::DrawMap()
 {
 	for (int i = 0; i<13; i++)
@@ -740,7 +740,7 @@ void DMS::DrawMap()
 			}
 		}
 }
-//ÓÃÊó±êÑ¡ÔñµØÍ¼¿é
+//ç”¨é¼ æ ‡é€‰æ‹©åœ°å›¾å—
 void DMS::UsingMouseChoose(RECT &mrect)
 {
 	RECT rect,nothing;

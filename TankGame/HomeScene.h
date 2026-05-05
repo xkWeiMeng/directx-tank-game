@@ -1,6 +1,6 @@
-#pragma once
+ï»¿#pragma once
 #include"Scene.h"
-//»¶Ó­³¡¾°
+//æ¬¢è¿Žåœºæ™¯
 class HomeScene : public virtual Scene
 {
 public:

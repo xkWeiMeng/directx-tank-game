@@ -1,4 +1,4 @@
-#include <windows.h>
+ï»¿#include <windows.h>
 #include <iostream>
 #include <time.h>
 #include"Global.h"
@@ -22,7 +22,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         PostQuitMessage(0);
         break;
     case WM_PAINT:
-        //»ñÈ¡´°¿ÚÔÚÆÁÄ»µÄ×ø±ê
+        //è·å–çª—å£åœ¨å±å¹•çš„åæ ‡
         if (!Global::Window::FullScreen)
         {
             GetClientRect(hWnd, &rect);
@@ -33,7 +33,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         if (!Gameover)
             Game_Render(hWnd, device);
         break;
-        /*case WM_SIZE://²»»æÖÆ±êÌâÀ¸
+        /*case WM_SIZE://ä¸ç»˜åˆ¶æ ‡é¢˜æ 
             LONG_PTR Style = ::GetWindowLongPtr(hWnd, GWL_STYLE);
             Style = Style &~WS_CAPTION &~WS_SYSMENU &~WS_SIZEBOX;
             ::SetWindowLongPtr(hWnd, GWL_STYLE, Style);
@@ -73,10 +73,10 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
     //create a new window
-	long MetricsX = ::GetSystemMetrics(SM_CXSCREEN);//»ñÈ¡ÏÔÊ¾Æ÷·Ö±æÂÊÓÃÓÚÈÃ´°¿Ú¾ÓÖĞ
+	long MetricsX = ::GetSystemMetrics(SM_CXSCREEN);//è·å–æ˜¾ç¤ºå™¨åˆ†è¾¨ç‡ç”¨äºè®©çª—å£å±…ä¸­
 	long MetricsY = ::GetSystemMetrics(SM_CYSCREEN);
 	//create a new window
-	//¸ù¾İÓÃ»§ÆÁÄ»·Ö±æÂÊ·ÖÅäÓÎÏ·´°¿Ú´óĞ¡
+	//æ ¹æ®ç”¨æˆ·å±å¹•åˆ†è¾¨ç‡åˆ†é…æ¸¸æˆçª—å£å¤§å°
 	const float GameY_Screen_rate = 0.8888889;
 	const float GameY_GameX_rate = 0.9375;
 
@@ -124,32 +124,32 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     //initialize the game
     if (!Game_Init(window)) {
-        ShowMessage("ÓÎÏ·³õÊ¼»¯Ê§°Ü");
+        ShowMessage("æ¸¸æˆåˆå§‹åŒ–å¤±è´¥");
         return -1;
     }
 
     while (!Gameover)
     {
-        //Èç¹ûÓĞWindowsÏûÏ¢ÔòÓÅÏÈ´¦Àí
+        //å¦‚æœæœ‰Windowsæ¶ˆæ¯åˆ™ä¼˜å…ˆå¤„ç†
         if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
         else {
-            //Èç¹û´°¿ÚÃ»ÓĞ¼¤»î£¬²¢ÇÒÒ²²»ÔÊĞíºóÌ¨ÔËĞĞÓÎÏ·Ê±£¬¾ÍÌø¹ıËùÓĞÂß¼­´¦Àí
+            //å¦‚æœçª—å£æ²¡æœ‰æ¿€æ´»ï¼Œå¹¶ä¸”ä¹Ÿä¸å…è®¸åå°è¿è¡Œæ¸¸æˆæ—¶ï¼Œå°±è·³è¿‡æ‰€æœ‰é€»è¾‘å¤„ç†
             if (Global::Window::isActity == false) {
                 if (Global::Window::EnableBackgroundRunning == false)
                     continue;
             }
 
-            //»ñÈ¡µ±Ç°Ê±¼ä£¬¾«È·µ½ºÁÃë
+            //è·å–å½“å‰æ—¶é—´ï¼Œç²¾ç¡®åˆ°æ¯«ç§’
             currentTime = timeGetTime();
 
-            //-------¼ÆËãÖ¡ÂÊ--------
-            //Ã¿Ö´ĞĞÒ»´ÎÑ­»·currentCount×Ô¼Ó1
+            //-------è®¡ç®—å¸§ç‡--------
+            //æ¯æ‰§è¡Œä¸€æ¬¡å¾ªç¯currentCountè‡ªåŠ 1
             currentCount++;
-            //Ïà±ÈÉÏÒ»´ÎÑ­»·¹ıÁË1ÃëÖÓºó£¬currentCount¼´Îªµ±Ç°µÄFPSÖ¡ÂÊ
+            //ç›¸æ¯”ä¸Šä¸€æ¬¡å¾ªç¯è¿‡äº†1ç§’é’Ÿåï¼ŒcurrentCountå³ä¸ºå½“å‰çš„FPSå¸§ç‡
             if (currentTime > lastCurrentTime + 1000)
             {
                 Global::Debug::currentFPS = currentCount;
@@ -158,29 +158,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
             //-----------------------
 
-            //Éè¶¨Âß¼­Ë¢ĞÂËÙ¶ÈÎªÖ¸¶¨µÄÖ¡ÂÊ£¬µ±ÓëÉÏÒ»´ÎË¢ĞÂµÄÊ±¼ä¼ä¸ô³¬¹ıÁËÖ¡ÂÊµÄµ¹ÊıÊ±£¬Ö´ĞĞUpdate
+            //è®¾å®šé€»è¾‘åˆ·æ–°é€Ÿåº¦ä¸ºæŒ‡å®šçš„å¸§ç‡ï¼Œå½“ä¸ä¸Šä¸€æ¬¡åˆ·æ–°çš„æ—¶é—´é—´éš”è¶…è¿‡äº†å¸§ç‡çš„å€’æ•°æ—¶ï¼Œæ‰§è¡ŒUpdate
             if (currentTime > refreshTime + 1000.0f / Global::Window::targetFps)
             {
                 refreshTime = currentTime;
-                Game_Update(window);//DirectXÑ­»·
+                Game_Update(window);//DirectXå¾ªç¯
             }
 
-            //ÆäÓàÊ±¼äÈ«ÓÃÀ´äÖÈ¾
-            Game_Render(window, device);//DirectXäÖÈ¾
+            //å…¶ä½™æ—¶é—´å…¨ç”¨æ¥æ¸²æŸ“
+            Game_Render(window, device);//DirectXæ¸²æŸ“
         }
     }
-    //ÊÍ·Å×ÊÔ´
+    //é‡Šæ”¾èµ„æº
     Game_Free(window, device);
 
     return msg.wParam;
 }
 
-//½áÊøÓÎÏ·
+//ç»“æŸæ¸¸æˆ
 void EndApplication()
 {
     PostMessage(window, WM_DESTROY, 0, 0);
 }
-//µ¯³öÒ»¸öÒÔÓÎÏ·±êÌâÎª±êÌâ£¬´øÓĞÒ»¸öÈ·¶¨°´Å¥µÄÏûÏ¢¿ò
+//å¼¹å‡ºä¸€ä¸ªä»¥æ¸¸æˆæ ‡é¢˜ä¸ºæ ‡é¢˜ï¼Œå¸¦æœ‰ä¸€ä¸ªç¡®å®šæŒ‰é’®çš„æ¶ˆæ¯æ¡†
 void ShowMessage(string text)
 {
     MessageBox(window, text.c_str(), Global::Window::GameTitle.c_str(), MB_OK);

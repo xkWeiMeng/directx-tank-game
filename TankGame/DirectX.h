@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 //header files
 #define WIN32_EXTRA_LEAN
@@ -90,20 +90,20 @@ int Collision(SPRITE sprite1, SPRITE sprite2);
 //distance based collision detection
 bool CollisionD(SPRITE sprite1, SPRITE sprite2);
 
-//DirectInput¶ÔÏó
+//DirectInputå¯¹è±¡
 extern LPDIRECTINPUT8 dInput;
-//Êó±êÉè±¸
+//é¼ æ ‡è®¾å¤‡
 extern LPDIRECTINPUTDEVICE8 diMouse;
-//¼üÅÌÉè±¸
+//é”®ç›˜è®¾å¤‡
 extern LPDIRECTINPUTDEVICE8 diKeyboard;
 
-////Êó±ê×´Ì¬
+////é¼ æ ‡çŠ¶æ€
 //extern DIMOUSESTATE mouseState;
 
-//ÊÖ±ú×´Ì¬
+//æ‰‹æŸ„çŠ¶æ€
 extern XINPUT_GAMEPAD controllers[4];
 
-//Êó±ê×ø±ê
+//é¼ æ ‡åæ ‡
 extern POINT mousePoint;
 
 #define MLButton 0

@@ -1,4 +1,4 @@
-#include "Sound.h"
+ï»¿#include "Sound.h"
 
 namespace Sound {
 	 CSound*Start;
@@ -14,26 +14,26 @@ void Sound::Sound_Init()
 {
 	Start=LoadSound(Resource::Sound_Rescource::Start);
 	if (Start == NULL)
-		ShowMessage("¿ªÊ¼ÉùÒô×°ÔØÊ§°Ü");
+		ShowMessage("å¼€å§‹å£°éŸ³è£…è½½å¤±è´¥");
 
 	Moving = LoadSound(Resource::Sound_Rescource::Moving);
 	if (Moving == NULL)
-		ShowMessage("Ì¹¿ËÒÆ¶¯ÉùÒô×°ÔØÊ§°Ü");
+		ShowMessage("å¦å…‹ç§»åŠ¨å£°éŸ³è£…è½½å¤±è´¥");
 
 	Stop = LoadSound(Resource::Sound_Rescource::Stop);
 	if (Stop == NULL)
-		ShowMessage("Ì¹¿ËÍ£Ö¹ÒıÇæÉùÒô×°ÔØÊ§°Ü");
+		ShowMessage("å¦å…‹åœæ­¢å¼•æ“å£°éŸ³è£…è½½å¤±è´¥");
 
 	BGM = LoadSound(Resource::Sound_Rescource::BGM);
 	if (BGM == NULL)
-		ShowMessage("BGM×°ÔØÊ§°Ü");
+		ShowMessage("BGMè£…è½½å¤±è´¥");
 	PlayerBoom= LoadSound(Resource::Sound_Rescource::PlayerBoom);
 	if (PlayerBoom == NULL)
-		ShowMessage("Íæ¼Ò±¬Õ¨ÉùÒô×°ÔØÊ§°Ü");
+		ShowMessage("ç©å®¶çˆ†ç‚¸å£°éŸ³è£…è½½å¤±è´¥");
 	/*
 	GameOver = LoadSound(Resource::Sound_Rescource::GameOver);
 	if (GameOver == NULL)
-		ShowMessage("ÓÎÏ·Ê§°ÜÉùÒô×°ÔØÊ§°Ü");
+		ShowMessage("æ¸¸æˆå¤±è´¥å£°éŸ³è£…è½½å¤±è´¥");
 	*/
 }
 

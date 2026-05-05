@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include<fstream>
 #include<vector>
 #include"Scene.h"
@@ -15,15 +15,15 @@ enum Dirction {
 class Bullet {
 public:
 	SPRITE bullet;
-	int Shooter;//×Óµ¯Éä»÷Õß
-	int Speed;//×Óµ¯ËÙ¶È
-	int Dir;//×Óµ¯·½Ïò
+	int Shooter;//å­å¼¹å°„å‡»è€…
+	int Speed;//å­å¼¹é€Ÿåº¦
+	int Dir;//å­å¼¹æ–¹å‘
 	float MovedPixel;
 	unsigned long ID;
 	int BoomFlag;
 	int  PowerLevel;
-	Bullet(int,int ,int,int,int,int);//×Óµ¯³õÊ¼»¯
-	bool Logic();//×Óµ¯Åö×²¼ì²â
+	Bullet(int,int ,int,int,int,int);//å­å¼¹åˆå§‹åŒ–
+	bool Logic();//å­å¼¹ç¢°æ’æ£€æµ‹
 	bool Draw();
 	int FlickerFrame;
 	int LastFrametime;
@@ -56,16 +56,16 @@ public:
 	SPRITE player;
 	Player();
 	int FlickerFrame;
-	int Lift;;//Íæ¼ÒÉúÃüÊı
-	int Health_Point;//Íæ¼ÒÑªÁ¿
-	int BulletSpeed;//Íæ¼Ò×Óµ¯·ÉĞĞËÙ¶È
-	int Speed;//ÒÆ¶¯ËÙ¶È
-	int Attack_Speed;//¹¥»÷ËÙ¶È
-	int Dir;//Íæ¼Ò·½Ïò
-	int Grade;//Íæ¼ÒµÈ¼¶
+	int Lift;;//ç©å®¶ç”Ÿå‘½æ•°
+	int Health_Point;//ç©å®¶è¡€é‡
+	int BulletSpeed;//ç©å®¶å­å¼¹é£è¡Œé€Ÿåº¦
+	int Speed;//ç§»åŠ¨é€Ÿåº¦
+	int Attack_Speed;//æ”»å‡»é€Ÿåº¦
+	int Dir;//ç©å®¶æ–¹å‘
+	int Grade;//ç©å®¶ç­‰çº§
 	int PowerLevel;
-	bool Alive;//´æÔÚ±êÖ¾
-	bool FlashFlag;//ÉÁ¹â±êÖ¾
+	bool Alive;//å­˜åœ¨æ ‡å¿—
+	bool FlashFlag;//é—ªå…‰æ ‡å¿—
 	bool Shoot(int,int);
 	bool Draw();
 	bool Logic(int);
@@ -86,9 +86,9 @@ public:
 	Enemy(int x,int y,int speed,int hp,int as,int,int);
 	bool Draw();
 	bool Logic(bool);
-	int DamageFlag;//»Ù»µ±êÖ¾
-	bool MoveStage;//ÒÆ¶¯×´Ì¬
-	bool CrashingFlag;//Åö×²±êÖ¾
+	int DamageFlag;//æ¯åæ ‡å¿—
+	bool MoveStage;//ç§»åŠ¨çŠ¶æ€
+	bool CrashingFlag;//ç¢°æ’æ ‡å¿—
 	unsigned long ID;
 	int Time;
 };
@@ -123,7 +123,7 @@ struct BoomListHead {
 	BoomList*next;
 };
 
-//ÎŞÓÃ¶ÔÏóÁ´±í
+//æ— ç”¨å¯¹è±¡é“¾è¡¨
 struct UselessObj{
 	unsigned long ID;
 	UselessObj*next;

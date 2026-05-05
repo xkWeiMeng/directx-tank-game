@@ -1,42 +1,42 @@
-#include "DirectX.h"
+ï»¿#include "DirectX.h"
 using namespace std;
 
-//Direct3D¶ÔÏó
+//Direct3Då¯¹è±¡
 LPDIRECT3D9 d3d = NULL;
-//D3DÉè±¸
+//D3Dè®¾å¤‡
 LPDIRECT3DDEVICE9 d3dDev = NULL;
 
-//Ä»ºó»º³åÇø
+//å¹•åç¼“å†²åŒº
 LPDIRECT3DSURFACE9 backBuffer = NULL;
 
-//DirectInput¶ÔÏó
+//DirectInputå¯¹è±¡
 LPDIRECTINPUT8 dInput = NULL;
-//Êó±êÉè±¸
+//é¼ æ ‡è®¾å¤‡
 LPDIRECTINPUTDEVICE8 diMouse = NULL;
-//¼üÅÌÉè±¸
+//é”®ç›˜è®¾å¤‡
 LPDIRECTINPUTDEVICE8 diKeyboard = NULL;
-//Êó±ê×´Ì¬
+//é¼ æ ‡çŠ¶æ€
 DIMOUSESTATE mouseState;
 
 POINT mousePoint;
 char keys[256];
 char keys_down[256];
 
-//ÊÖ±úÊäÈë
+//æ‰‹æŸ„è¾“å…¥
 XINPUT_GAMEPAD controllers[4];
 
 LPD3DXSPRITE spriteObj;
 
-//³õÊ¼»¯Direct3D
+//åˆå§‹åŒ–Direct3D
 bool Direct3D_Init(HWND window, int width, int height, bool fullscreen)
 {
-    //´´½¨Direct3D¶ÔÏó
+    //åˆ›å»ºDirect3Då¯¹è±¡
     d3d = Direct3DCreate9(D3D_SDK_VERSION);
     if (!d3d) return false;
 
-    //ÉèÖÃ²ÎÊı
+    //è®¾ç½®å‚æ•°
     D3DPRESENT_PARAMETERS d3dpp;
-    //ÇåÁãd3dppËùÔÚµÄÄÚ´æÇø
+    //æ¸…é›¶d3dppæ‰€åœ¨çš„å†…å­˜åŒº
     ZeroMemory(&d3dpp, sizeof(d3dpp));
 
     d3dpp.hDeviceWindow = window;
@@ -64,14 +64,14 @@ bool Direct3D_Init(HWND window, int width, int height, bool fullscreen)
 
     return 1;
 }
-//ÊÍ·ÅDirect3D
+//é‡Šæ”¾Direct3D
 void Direct3D_Shutdown()
 {
     if (spriteObj) spriteObj->Release();
     if (d3dDev) d3dDev->Release();
     if (d3d) d3d->Release();
 }
-//»­±íÃæ
+//ç”»è¡¨é¢
 void DrawSurface(LPDIRECT3DSURFACE9 dest, float x, float y, LPDIRECT3DSURFACE9 source)
 {
     //get width/height from source surface
@@ -86,7 +86,7 @@ void DrawSurface(LPDIRECT3DSURFACE9 dest, float x, float y, LPDIRECT3DSURFACE9 s
     d3dDev->StretchRect(source, &source_rect, dest, &dest_rect, D3DTEXF_NONE);
 
 }
-//ÔØÈë±íÃæ
+//è½½å…¥è¡¨é¢
 LPDIRECT3DSURFACE9 LoadSurface(string filename)
 {
     LPDIRECT3DSURFACE9 image = NULL;
@@ -125,7 +125,7 @@ LPDIRECT3DSURFACE9 LoadSurface(string filename)
     return image;
 }
 
-//ÔØÈëÎÆÀí
+//è½½å…¥çº¹ç†
 LPDIRECT3DTEXTURE9 LoadTexture(std::string filename, D3DCOLOR transcolor)
 {
     LPDIRECT3DTEXTURE9 texture = NULL;
@@ -253,7 +253,7 @@ void Sprite_Transform_Draw(LPDIRECT3DTEXTURE9 image, int x, int y, int width, in
     Sprite_Transform_Draw(image, x, y, width, height, frame, columns, rotation, scaling, scaling, color);
 }
 
-//ÅĞ¶¨Á½¸ö¾«ÁéÊÇ·ñÅö×²
+//åˆ¤å®šä¸¤ä¸ªç²¾çµæ˜¯å¦ç¢°æ’
 int Collision(SPRITE sprite1, SPRITE sprite2)
 {
     RECT rect1;
@@ -272,7 +272,7 @@ int Collision(SPRITE sprite1, SPRITE sprite2)
     return IntersectRect(&dest, &rect1, &rect2);
 }
 
-//ÅĞ¶¨Á½¸ö¾«ÁéÊÇ·ñÅö×²
+//åˆ¤å®šä¸¤ä¸ªç²¾çµæ˜¯å¦ç¢°æ’
 bool CollisionD(SPRITE sprite1, SPRITE sprite2)
 {
     double radius1, radius2;
@@ -307,7 +307,7 @@ bool CollisionD(SPRITE sprite1, SPRITE sprite2)
     //return distance comparison
     return (dist < radius1 + radius2);
 }
-//³õÊ¼»¯ÊäÈëÉè±¸
+//åˆå§‹åŒ–è¾“å…¥è®¾å¤‡
 bool DirectInput_Init(HWND hwnd)
 {
     //initialize DirectInput object
@@ -328,12 +328,12 @@ bool DirectInput_Init(HWND hwnd)
     dInput->CreateDevice(GUID_SysMouse, &diMouse, NULL);
     diMouse->SetDataFormat(&c_dfDIMouse);
 
-    //ÉèÖÃÖáÊı¾İÎª¾ø¶ÔÖµ£¬Ä¬ÈÏÎªÏà¶ÔÖµ
+    //è®¾ç½®è½´æ•°æ®ä¸ºç»å¯¹å€¼ï¼Œé»˜è®¤ä¸ºç›¸å¯¹å€¼
     //diMouse->SetProperty(DIPROP_AXISMODE, DIPROPAXISMODE_ABS);
 
     //diMouse->SetCooperativeLevel(hwnd, DISCL_NONEXCLUSIVE | DISCL_FOREGROUND);
 
-    //µ÷ÕûÎª¶ÀÕ¼Êó±êÄ£Ê½£¬»á¶áÈ¡Windows¶ÔÊó±êµÄ¿ØÖÆ£¬ÏµÍ³Ö¸ÕëÒ²²»»áÏÔÊ¾ÁË
+    //è°ƒæ•´ä¸ºç‹¬å é¼ æ ‡æ¨¡å¼ï¼Œä¼šå¤ºå–Windowså¯¹é¼ æ ‡çš„æ§åˆ¶ï¼Œç³»ç»ŸæŒ‡é’ˆä¹Ÿä¸ä¼šæ˜¾ç¤ºäº†
     diMouse->SetCooperativeLevel(hwnd, DISCL_EXCLUSIVE | DISCL_FOREGROUND);
 
     mouseState.lX = mouseState.lY = mouseState.lZ = 0;
@@ -347,21 +347,21 @@ bool DirectInput_Init(HWND hwnd)
 bool isCursorInGame = true;
 void ProcessInput(HWND hwnd)
 {
-    // Ë¢ĞÂÊó±êÎ»ÖÃ£¬ÀÛ¼ÓÃ¿Ò»´ÎÆ«ÒÆÁ¿
+    // åˆ·æ–°é¼ æ ‡ä½ç½®ï¼Œç´¯åŠ æ¯ä¸€æ¬¡åç§»é‡
     mousePoint.x += mouseState.lX*Global::Window::CursorSensitivity;
     mousePoint.y += mouseState.lY*Global::Window::CursorSensitivity;
 
-    // ÏŞÖÆÊó±ê·¶Î§
+    // é™åˆ¶é¼ æ ‡èŒƒå›´
     if (mousePoint.x < 0) { mousePoint.x = 0; }
     if (mousePoint.y < 0) { mousePoint.y = 0; }
     
     if (mousePoint.y < 0) {
-    //±êÌâÀ¸¼ì²â
+    //æ ‡é¢˜æ æ£€æµ‹
         if (mousePoint.y < -32) {
             mousePoint.x = 0;
             mousePoint.y = 0;
             isCursorInGame = false;
-            //·Å¿ªÊó±ê¿ØÖÆ
+            //æ”¾å¼€é¼ æ ‡æ§åˆ¶
             diMouse->Unacquire();
             diMouse->SetCooperativeLevel(hwnd, DISCL_NONEXCLUSIVE | DISCL_FOREGROUND);
             diMouse->Acquire();
@@ -371,7 +371,7 @@ void ProcessInput(HWND hwnd)
         if (isCursorInGame == false)
         {
             isCursorInGame = true;
-            //¶áÈ¡Êó±ê¿ØÖÆ
+            //å¤ºå–é¼ æ ‡æ§åˆ¶
             diMouse->Unacquire();
             diMouse->SetCooperativeLevel(hwnd, DISCL_EXCLUSIVE | DISCL_FOREGROUND);
             diMouse->Acquire();
@@ -384,7 +384,7 @@ void ProcessInput(HWND hwnd)
     if (mousePoint.x > Global::Window::ScreenWidth) { mousePoint.x = Global::Window::ScreenWidth; }
     if (mousePoint.y > Global::Window::ScreenHeight) { mousePoint.y = Global::Window::ScreenHeight; }
 
-    //Èç¹ûÓÎÏ·´°¿ÚÊÇ¼¤»îµÄÔòÇ¿ÖÆµ÷ÕûÏµÍ³Êó±êµÄÎ»ÖÃ£¬¾¡¹Ü¿´²»µ½ÏµÍ³Êó±ê£¬Êµ¼ÊÉÏ»¹ÊÇ´æÔÚµÄ£¬µ«Êó±êµÄ°´¼ü²Ù×÷²»»á¶ÔÓÎÏ·ÒÔÍâµÄ³ÌĞòÓĞÓ°Ïì
+    //å¦‚æœæ¸¸æˆçª—å£æ˜¯æ¿€æ´»çš„åˆ™å¼ºåˆ¶è°ƒæ•´ç³»ç»Ÿé¼ æ ‡çš„ä½ç½®ï¼Œå°½ç®¡çœ‹ä¸åˆ°ç³»ç»Ÿé¼ æ ‡ï¼Œå®é™…ä¸Šè¿˜æ˜¯å­˜åœ¨çš„ï¼Œä½†é¼ æ ‡çš„æŒ‰é”®æ“ä½œä¸ä¼šå¯¹æ¸¸æˆä»¥å¤–çš„ç¨‹åºæœ‰å½±å“
     if (Global::Window::isActity && isCursorInGame)
     {
         SetCursorPos(mousePoint.x + Global::Window::x, mousePoint.y + Global::Window::y);
@@ -392,7 +392,7 @@ void ProcessInput(HWND hwnd)
 }
 void DirectInput_Update(HWND hWnd)
 {
-    //¸üĞÂÊó±ê
+    //æ›´æ–°é¼ æ ‡
     diMouse->Poll();
 
     if (!SUCCEEDED(diMouse->GetDeviceState(sizeof(DIMOUSESTATE), &mouseState)))
@@ -403,7 +403,7 @@ void DirectInput_Update(HWND hWnd)
     ProcessInput(hWnd);
     
 
-    //¸üĞÂ¼üÅÌ
+    //æ›´æ–°é”®ç›˜
     diKeyboard->Poll();
     if (!SUCCEEDED(diKeyboard->GetDeviceState(256, (LPVOID)&keys)))
     {
@@ -411,7 +411,7 @@ void DirectInput_Update(HWND hWnd)
         diKeyboard->Acquire();
     }
 
-    ////¸üĞÂÊÖ±ú
+    ////æ›´æ–°æ‰‹æŸ„
     //for (int i = 0; i < 4; i++)
     //{
     //    ZeroMemory(&controllers[i], sizeof(XINPUT_STATE));
@@ -423,29 +423,29 @@ void DirectInput_Update(HWND hWnd)
     //}
 }
 
-//È¡µÃÊó±êX×ø±ê
+//å–å¾—é¼ æ ‡Xåæ ‡
 int Mouse_X()
 {
     return mousePoint.x;
 }
-//È¡µÃÊó±êY×ø±ê
+//å–å¾—é¼ æ ‡Yåæ ‡
 int Mouse_Y()
 {
     return mousePoint.y;
 }
 
 /*
-È¡µÃÊó±ê°´¼üÊÇ·ñ°´ÏÂ
-MLButton ×ó¼ü
-MRButton ÓÒ¼ü
-MMButton ÖĞ¼ü
+å–å¾—é¼ æ ‡æŒ‰é”®æ˜¯å¦æŒ‰ä¸‹
+MLButton å·¦é”®
+MRButton å³é”®
+MMButton ä¸­é”®
 */
 int Mouse_Button(int button)
 {
     return mouseState.rgbButtons[button] & 0x80;
 }
 
-//ÅĞ¶Ï°´¼üÊÇ·ñ°´ÏÂ
+//åˆ¤æ–­æŒ‰é”®æ˜¯å¦æŒ‰ä¸‹
 bool Key_Down(int key)
 {
     return (bool)(keys[key] & 0x80);
@@ -453,10 +453,10 @@ bool Key_Down(int key)
 
 bool Key_Up(int key)
 {
-    //ÅĞ¶ÏÉÏÒ»Ö¡ÊÇ·ñÒÑ¾­°´ÏÂ
+    //åˆ¤æ–­ä¸Šä¸€å¸§æ˜¯å¦å·²ç»æŒ‰ä¸‹
     if ((bool)(keys_down[key] & 0x80))
     {
-        //ÅĞ¶Ï°´¼üÊÇ·ñ²»´¦ÓÚ°´ÏÂ×´Ì¬
+        //åˆ¤æ–­æŒ‰é”®æ˜¯å¦ä¸å¤„äºæŒ‰ä¸‹çŠ¶æ€
         if (!Key_Down(key))
         {
             keys_down[key] = 0;

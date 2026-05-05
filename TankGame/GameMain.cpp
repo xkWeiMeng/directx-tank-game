@@ -1,16 +1,16 @@
-#include"GameMain.h"
+ï»¿#include"GameMain.h"
 #include"Global.h"
 #include"Scenes.h"
 #include"DebugTools.h"
 #include"GUIs.h"
 #include"DirectSound.h"
-//µ±Ç°ÓÎÏ·µÄ³¡¾°
+//å½“å‰æ¸¸æˆçš„åœºæ™¯
 Scene *scene = NULL;
 
-//µ±Ç°ÓÎÏ·×´Ì¬
+//å½“å‰æ¸¸æˆçŠ¶æ€
 GAME_STATE Game_State;
 
-//¶ÁÈ¡ÓÎÏ·ÉèÖÃ
+//è¯»å–æ¸¸æˆè®¾ç½®
 bool ReadPlayerSettingInHD();
 
 // Startup and loading code goes here
@@ -18,35 +18,35 @@ bool Game_Init(HWND window)
 {
     if (!Direct3D_Init(window, Global::Window::ScreenWidth, Global::Window::ScreenHeight, Global::Window::FullScreen))
     {
-        ShowMessage("Direct3D³õÊ¼»¯Ê§°Ü");
+        ShowMessage("Direct3Dåˆå§‹åŒ–å¤±è´¥");
         return false; 
     }
     if (!DirectInput_Init(window))
     {
-        ShowMessage("Direct Input ³õÊ¼»¯Ê§°Ü");
+        ShowMessage("Direct Input åˆå§‹åŒ–å¤±è´¥");
         return false;
     }
     if (!DirectSound_Init(window)) {
-        ShowMessage("Direct Sound ³õÊ¼»¯Ê§°Ü");
+        ShowMessage("Direct Sound åˆå§‹åŒ–å¤±è´¥");
         return false;
     }
-	//³õÊ¼»¯ÉùÒô×ÊÔ´
+	//åˆå§‹åŒ–å£°éŸ³èµ„æº
 	Sound::Sound_Init();
 	//
     GUI::Cursor::Init();
 	//
 	Global::Window::Now_GAME_STATE = 0;
-	//ÉùÒô¿ª¹Ø
+	//å£°éŸ³å¼€å…³
 	//Global::Sound::SoundSwicth = true;
-	//³õÊ¼»¯Íæ¼Ò¿ØÖÆ¼ü  //ÍêÕû°æĞèÒª¶ÁÈ¡Ó²ÅÌÖĞµÄÓÎÏ·ÅäÖÃ
+	//åˆå§‹åŒ–ç©å®¶æ§åˆ¶é”®  //å®Œæ•´ç‰ˆéœ€è¦è¯»å–ç¡¬ç›˜ä¸­çš„æ¸¸æˆé…ç½®
 	{
-		//Íæ¼ÒÒ»
+		//ç©å®¶ä¸€
 		Global::PlayerControl::Player1[0] = VK_UP;
 		Global::PlayerControl::Player1[1] = VK_DOWN;
 		Global::PlayerControl::Player1[2] = VK_LEFT;
 		Global::PlayerControl::Player1[3] = VK_RIGHT;
 		Global::PlayerControl::Player1[4] = 0x58;
-		//Íæ¼Ò¶ş
+		//ç©å®¶äºŒ
 		Global::PlayerControl::Player2[0] = 0x57;
 		Global::PlayerControl::Player2[1] = 0x53;
 		Global::PlayerControl::Player2[2] = 0x41;;
@@ -55,26 +55,26 @@ bool Game_Init(HWND window)
 	}
 	//
 	ReadPlayerSettingInHD();
-    //ÇĞ»»µ½»¶Ó­³¡¾°
+    //åˆ‡æ¢åˆ°æ¬¢è¿åœºæ™¯
     Game_ChangeScene(GAME_STATE::Home);
 
     return true;
 }
 
 /*
-    Âß¼­´¦Àíº¯Êı
+    é€»è¾‘å¤„ç†å‡½æ•°
 */
 void Game_Update(HWND window)
 {
-    //»ñÈ¡×îĞÂµÄÊó±ê¼üÅÌÊäÈë
+    //è·å–æœ€æ–°çš„é¼ æ ‡é”®ç›˜è¾“å…¥
     DirectInput_Update(window);
 
     GUI::Cursor::Update();
 
-    //Ö´ĞĞµ±Ç°³¡¾°µÄUpdateÂß¼­´¦Àíº¯Êı
+    //æ‰§è¡Œå½“å‰åœºæ™¯çš„Updateé€»è¾‘å¤„ç†å‡½æ•°
     if (scene != NULL)
         scene->Update();
-	//ÔÚÖ÷½çÃæ¼ì²âÍË³ö¼ü°´ÏÂºóÍË³öÓÎÏ·
+	//åœ¨ä¸»ç•Œé¢æ£€æµ‹é€€å‡ºé”®æŒ‰ä¸‹åé€€å‡ºæ¸¸æˆ
 	if (Global::Window::Now_GAME_STATE == 0)
 	{
 		if (Key_Up(DIK_ESCAPE))
@@ -83,22 +83,22 @@ void Game_Update(HWND window)
 }
 
 /*
-    äÖÈ¾´¦Àíº¯Êı
+    æ¸²æŸ“å¤„ç†å‡½æ•°
 */
 void Game_Render(HWND window, HDC device)
 {
-    //È·ÈÏDXÒÑ¾­ÉúĞ§
+    //ç¡®è®¤DXå·²ç»ç”Ÿæ•ˆ
     if (!d3dDev) return;
 
-    //ÇåÆÁ
+    //æ¸…å±
     d3dDev->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_ARGB(0, 65, 105, 225 ), 1.0f, 0);
 
-    //¿ªÊ¼äÖÈ¾
+    //å¼€å§‹æ¸²æŸ“
     if (d3dDev->BeginScene())
     {
         spriteObj->Begin(D3DXSPRITE_ALPHABLEND);
 
-        //µ÷ÓÃµ±Ç°³¡¾°µÄäÖÈ¾º¯Êı
+        //è°ƒç”¨å½“å‰åœºæ™¯çš„æ¸²æŸ“å‡½æ•°
         if (scene != NULL)
             scene->Render();
 
@@ -112,18 +112,18 @@ void Game_Render(HWND window, HDC device)
 
         spriteObj->End();
         d3dDev->EndScene();
-        //°ÑºóÌ¨»º´æË¢µ½Ç°Ì¨ÏÔÊ¾
+        //æŠŠåå°ç¼“å­˜åˆ·åˆ°å‰å°æ˜¾ç¤º
         d3dDev->Present(NULL, NULL, NULL, NULL);
     }
 }
-//ÇĞ»»ÓÎÏ·³¡¾°
+//åˆ‡æ¢æ¸¸æˆåœºæ™¯
 void Game_ChangeScene(GAME_STATE to)
 {
     if (to != Game_State)
     {
         if (scene != NULL)
         {
-            //ÊÍ·Åµ±Ç°³¡¾°µÄ×ÊÔ´
+            //é‡Šæ”¾å½“å‰åœºæ™¯çš„èµ„æº
             scene->End();
             delete scene;
         }
@@ -155,21 +155,21 @@ void Game_ChangeScene(GAME_STATE to)
 			scene = NULL;
             break;
         }
-        //µ÷ÓÃ³¡¾°µÄ³õÊ¼»¯º¯Êı
+        //è°ƒç”¨åœºæ™¯çš„åˆå§‹åŒ–å‡½æ•°
         if (scene == NULL || !scene->Init())
         {
-            //Èç¹û³¡¾°³õÊ¼»¯³ö´íÔò½áÊøÓÎÏ·
-			//ÕâÀïÓ¦µ¯³ö´°¿ÚËµÃ÷³ö´í
+            //å¦‚æœåœºæ™¯åˆå§‹åŒ–å‡ºé”™åˆ™ç»“æŸæ¸¸æˆ
+			//è¿™é‡Œåº”å¼¹å‡ºçª—å£è¯´æ˜å‡ºé”™
             EndApplication();
         }
         Game_State = to;
     }
 }
 
-// Ö»ÔÊĞíÔÚÏûÏ¢´¦Àíº¯ÊıWinProcÖĞµ÷ÓÃ´Ëº¯Êı£¬ÒªÏë¹Ø±ÕÓÎÏ·£¬µ÷ÓÃWinMainÀïµÄEndApplication
+// åªå…è®¸åœ¨æ¶ˆæ¯å¤„ç†å‡½æ•°WinProcä¸­è°ƒç”¨æ­¤å‡½æ•°ï¼Œè¦æƒ³å…³é—­æ¸¸æˆï¼Œè°ƒç”¨WinMainé‡Œçš„EndApplication
 void Game_Free(HWND window, HDC device)
 {
-    //µ÷ÓÃ³¡¾°µÄ¹Ø±Õº¯Êı²¢ÊÍ·Å³¡¾°
+    //è°ƒç”¨åœºæ™¯çš„å…³é—­å‡½æ•°å¹¶é‡Šæ”¾åœºæ™¯
     if (scene != NULL)
     {
         scene->End();
@@ -180,14 +180,14 @@ void Game_Free(HWND window, HDC device)
     Direct3D_Shutdown();
     ReleaseDC(window, device);
 }
-//¶ÁÈ¡ÓÎÏ·ÉèÖÃ
+//è¯»å–æ¸¸æˆè®¾ç½®
 bool ReadPlayerSettingInHD()
 {
 	char buf;
 	ifstream in("GameSet.set", ios::in | ios::binary);
 	if (!in.is_open())
 	{
-		ShowMessage("ÎŞ·¨´ò¿ªÓÎÏ·µÄÉèÖÃÎÄ¼ş");
+		ShowMessage("æ— æ³•æ‰“å¼€æ¸¸æˆçš„è®¾ç½®æ–‡ä»¶");
 		return false;
 	}
 	for (int i = 0; i < 5; i++)

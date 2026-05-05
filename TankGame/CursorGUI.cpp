@@ -1,4 +1,4 @@
-#include "CursorGUI.h"
+ï»¿#include "CursorGUI.h"
 #include"DirectX.h"
 
 namespace GUI {
@@ -6,7 +6,7 @@ namespace GUI {
         LPDIRECT3DTEXTURE9 Cursor_Texture = NULL;
         SPRITE Cursor;
 
-        //½«µ±Ç°Êó±êÎ»ÖÃ¸üĞÂµ½Êó±ê¾«ÁéÎ»ÖÃ
+        //å°†å½“å‰é¼ æ ‡ä½ç½®æ›´æ–°åˆ°é¼ æ ‡ç²¾çµä½ç½®
         void Update() {
             Cursor.x = mousePoint.x;
             Cursor.y = mousePoint.y;
@@ -23,10 +23,10 @@ namespace GUI {
         bool Init()
         {
             D3DXIMAGE_INFO Info;
-            //µÃµ½Í¼Æ¬ÎÄ¼şĞÅÏ¢µ½Info
+            //å¾—åˆ°å›¾ç‰‡æ–‡ä»¶ä¿¡æ¯åˆ°Info
             if (D3D_OK != (D3DXGetImageInfoFromFile(Resource::Cursor::Normal, &Info)))
             {
-                MessageBox(NULL, "µÃµ½Í¼ÏóĞÅÏ¢´íÎó!", "LOAD PIC ERROR", MB_OK);
+                MessageBox(NULL, "å¾—åˆ°å›¾è±¡ä¿¡æ¯é”™è¯¯!", "LOAD PIC ERROR", MB_OK);
             }
             Cursor_Texture = LoadTexture(Resource::Cursor::Normal);
             if (!Cursor_Texture) return false;
