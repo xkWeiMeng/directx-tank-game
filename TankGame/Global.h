@@ -1,27 +1,27 @@
-ï»¿#pragma once
+#pragma once
 #include<iostream>
 #include<Windows.h>
 #include"Resource.h"
 #include"WinMain.h"
 #include"DirectX.h"
 
-#define SAFE_RELEASE(p) { if(p) { (p)->Release(); (p)=NULL; } }  //é‡Šæ”¾èµ„æº
+#define SAFE_RELEASE(p) { if(p) { (p)->Release(); (p)=NULL; } }  //ÊÍ·Å×ÊÔ´
 using namespace std;
 enum GAME_STATE
 {
-    //æ— ä»»ä½•åœºæ™¯ï¼ˆåˆå§‹çŠ¶æ€ï¼‰
+    //ÎŞÈÎºÎ³¡¾°£¨³õÊ¼×´Ì¬£©
     None = 0,
-    //æ¬¢è¿åœºæ™¯
+    //»¶Ó­³¡¾°
     Home = 1,
-    //æ¸¸æˆåœºæ™¯
+    //ÓÎÏ·³¡¾°
     SinglePlayer = 2,
 	//
 	DoublePlayer = 3,
-	//è®¾è®¡åœ°å›¾
+	//Éè¼ÆµØÍ¼
 	DesignMap=4,
-    //å…³äºåœºæ™¯
+    //¹ØÓÚ³¡¾°
     About = 5,
-	//æ¸¸æˆè®¾å®šåœºæ™¯
+	//ÓÎÏ·Éè¶¨³¡¾°
 	GameSatting=6
 };
 namespace Global {
@@ -29,40 +29,45 @@ namespace Global {
         const string GameTitle = "Our Game";
 		extern int ScreenWidth;
 		extern int ScreenHeight ;
-        //çª—å£çš„åæ ‡
+		// Base design resolution and scale factors
+		const int BaseWidth = 1024;
+		const int BaseHeight = 960;
+		extern float ScaleX;
+		extern float ScaleY;
+        //´°¿ÚµÄ×ø±ê
         extern int x, y;
         extern bool EnableBackgroundRunning;
         extern bool isActity;
-        //é¼ æ ‡çµæ•åº¦
+        //Êó±êÁéÃô¶È
         const float CursorSensitivity = 1.0f;
         const bool FullScreen =  false;
-        //æŒ‡å®šé€»è¾‘åˆ·æ–°é€Ÿåº¦
+        //Ö¸¶¨Âß¼­Ë¢ĞÂËÙ¶È
         const float targetFps = 480.0f;
-		//å½“å‰çš„æ¸¸æˆçŠ¶æ€
+		//µ±Ç°µÄÓÎÏ·×´Ì¬
 		extern int Now_GAME_STATE;
     }
     namespace Home {
-        //æœ€ç»ˆçš„é€‰é¡¹ï¼Œ0ï¼šå•äººæ¸¸æˆï¼›1ï¼šåŒäººæ¸¸æˆï¼›2ï¼šè®¾è®¡åœ°å›¾ï¼›3ï¼šå…³äºæˆ‘ä»¬
+        //×îÖÕµÄÑ¡Ïî£¬0£ºµ¥ÈËÓÎÏ·£»1£ºË«ÈËÓÎÏ·£»2£ºÉè¼ÆµØÍ¼£»3£º¹ØÓÚÎÒÃÇ
         extern int selectedType;
     }
     namespace Debug {
-        //æ˜¯å¦æ˜¾ç¤ºè°ƒè¯•ä¿¡æ¯
+        //ÊÇ·ñÏÔÊ¾µ÷ÊÔĞÅÏ¢
         const bool ShowDebugInfo = true;
-        //å½“å‰æ€»å¸§ç‡
+        //µ±Ç°×ÜÖ¡ÂÊ
         extern int currentFPS;
     }
 	namespace DesignMap {
-		//æ–°è®¾è®¡åœ°å›¾çš„åç§°
+		//ĞÂÉè¼ÆµØÍ¼µÄÃû³Æ
 		extern string NewMapName;
 	}
 	namespace PlayerControl {
-		//ç©å®¶ä¸€çš„æ§åˆ¶æ–¹å¼
+		//Íæ¼ÒÒ»µÄ¿ØÖÆ·½Ê½
 		extern  int Player1[5];
-		//ç©å®¶äºŒçš„æ§åˆ¶æ–¹å¼
+		//Íæ¼Ò¶şµÄ¿ØÖÆ·½Ê½
 		extern  int Player2[5];
 	}
 	namespace Sound {
-		//éŸ³ä¹å¼€å…³
+		//ÒôÀÖ¿ª¹Ø
 		extern bool SoundSwicth;
 	}
 

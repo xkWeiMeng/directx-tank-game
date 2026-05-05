@@ -1,9 +1,9 @@
-ï»¿#include "GamingScene.h"
+#include "GamingScene.h"
 #define EnemyNumberMAX 21
 namespace GS {
 	LPDIRECT3DSURFACE9 GrayRect = NULL;
 	LPDIRECT3DSURFACE9 BlackRect = NULL;
-	/*çº¹ç†*/
+	/*ÎÆÀí*/
 	LPDIRECT3DTEXTURE9 Flag = NULL;
 	LPDIRECT3DTEXTURE9 Something = NULL;
 	LPDIRECT3DTEXTURE9 Tile = NULL;
@@ -19,11 +19,11 @@ namespace GS {
 	LPDIRECT3DTEXTURE9 Hole = NULL;
 	LPDIRECT3DTEXTURE9 Number = NULL;
 	LPDIRECT3DTEXTURE9 Flicker[9] = { NULL };
-	/*å˜é‡*/
+	/*±äÁ¿*/
 	vector<int> BornPlayer1MapPiece;
 	vector<int> BornPlayer2MapPiece;
 	vector<int> BornEnemyMapPiece;
-	string NowMapName = "stage1";
+	int NowLevel = 1;
 	unsigned long lasttime = 0;
 	int HaveBornEnemyNumber = 0;
 	int StartTime = 0, NowTime, SurplusTime = 0;
@@ -32,13 +32,13 @@ namespace GS {
 	bool IsDoublePlayer = false;
 	int SGOy = 960;
 	int EnemyNumber = 30;
-	/*å¯¹è±¡*/
+	/*¶ÔÏó*/
 	Player player;
 	Player2 player2;
 	Player &Player1 = player;
 	void ShowGameOver();
 
-	/*å·¥å…·å‡½æ•°*/
+	/*¹¤¾ßº¯Êı*/
 	int  Crash(int iswho, int x, int y, int speed, int dir, int shooter, unsigned long id, int);
 	void DrawMap();
 	void CreateMapPiece();
@@ -46,11 +46,11 @@ namespace GS {
 	bool ReadMapInHD(char * filename);
 	bool WriteMapToHD(char * filename);
 	void FillRect(RECT & rect, long l, long r, long t, long b);
-	void ReadMap(int x, int y, RECT&rect1, RECT&rect2);//è¯»å–åœ°å›¾ä¿¡æ¯
+	void ReadMap(int x, int y, RECT&rect1, RECT&rect2);//¶ÁÈ¡µØÍ¼ĞÅÏ¢
 	void AddUselessObj(unsigned long id);
-	bool DelListNode(EnemyList*listhead, unsigned long id);//åˆ é™¤æˆåŠŸè¿”å›trueï¼Œå¦åˆ™è¿”å›false
-	bool DelListNode(BulletList*listhead, unsigned long id);//åˆ é™¤æˆåŠŸè¿”å›trueï¼Œå¦åˆ™è¿”å›false
-	bool DelListNode(BoomList*listhead, unsigned long id);//åˆ é™¤æˆåŠŸè¿”å›trueï¼Œå¦åˆ™è¿”å›false
+	bool DelListNode(EnemyList*listhead, unsigned long id);//É¾³ı³É¹¦·µ»Øtrue£¬·ñÔò·µ»Øfalse
+	bool DelListNode(BulletList*listhead, unsigned long id);//É¾³ı³É¹¦·µ»Øtrue£¬·ñÔò·µ»Øfalse
+	bool DelListNode(BoomList*listhead, unsigned long id);//É¾³ı³É¹¦·µ»Øtrue£¬·ñÔò·µ»Øfalse
 	void DelUselessObj();
 	void DrawNet();
 	void ClearUselessObj();
@@ -63,28 +63,28 @@ namespace GS {
 	void ReadNextMap();
 	void StartNextStage();
 	void RestartThisStage();
-	/*å·¥å…·å‡½æ•°*/
-	BulletListHead bulletlisthead;//å­å¼¹é“¾è¡¨å¤´
-	EnemyListHead enemylisthead;//æ•Œäººé“¾è¡¨å¤´
-	UselessObjHead uselessobjhead;//å¤±æ•ˆå¯¹è±¡é“¾è¡¨å¤´
-	BoomListHead boomlisthead;//çˆ†ç‚¸é“¾è¡¨å¤´
+	/*¹¤¾ßº¯Êı*/
+	BulletListHead bulletlisthead;//×Óµ¯Á´±íÍ·
+	EnemyListHead enemylisthead;//µĞÈËÁ´±íÍ·
+	UselessObjHead uselessobjhead;//Ê§Ğ§¶ÔÏóÁ´±íÍ·
+	BoomListHead boomlisthead;//±¬Õ¨Á´±íÍ·
 	MapPieceListHead mappiecelisthead;
 
 	static unsigned long IDNumber = 0;
-	int EnemyXY[EnemyNumberMAX][2];//æ•Œäººä½ç½®åæ ‡è¡¨
-	int Map[13][13]; //ç¬¬ä¸€ä¸ªæ˜¯yè½´ï¼Œç¬¬äºŒä¸ªæ˜¯xè½´
+	int EnemyXY[EnemyNumberMAX][2];//µĞÈËÎ»ÖÃ×ø±ê±í
+	int Map[13][13]; //µÚÒ»¸öÊÇyÖá£¬µÚ¶ş¸öÊÇxÖá
 }
 using namespace GS;
 /*--------------------------------------------------------------------
-GamingSceneçš„æ–¹æ³•
+GamingSceneµÄ·½·¨
 ----------------------------------------------------------------------*/
-//åœºæ™¯åˆå§‹åŒ–
+//³¡¾°³õÊ¼»¯
 bool GamingScene::Init()
 {
 	//
 	srand((unsigned)time(0));
 
-	for (int i = 0; i < EnemyNumberMAX; i++)//åˆå§‹åŒ–æ•Œäººåæ ‡è¡¨
+	for (int i = 0; i < EnemyNumberMAX; i++)//³õÊ¼»¯µĞÈË×ø±ê±í
 	{
 		EnemyXY[i][0] = -1;
 		EnemyXY[i][1] = -1;
@@ -101,7 +101,7 @@ bool GamingScene::Init()
 	
 	if (result != D3D_OK)
 	{
-		ShowMessage("ç°è‰²-æ ¼å­ åˆå§‹åŒ–å¤±è´¥ï¼");
+		ShowMessage("»ÒÉ«-¸ñ×Ó ³õÊ¼»¯Ê§°Ü£¡");
 		return false;
 	}
 
@@ -115,7 +115,7 @@ bool GamingScene::Init()
 	);
 	if (result != D3D_OK)
 	{
-		ShowMessage("é»‘è‰²-æ ¼å­ åˆå§‹åŒ–å¤±è´¥ï¼");
+		ShowMessage("ºÚÉ«-¸ñ×Ó ³õÊ¼»¯Ê§°Ü£¡");
 		return false;
 	}
 	d3dDev->ColorFill(GrayRect, NULL, D3DCOLOR_XRGB(110, 110, 110));
@@ -124,89 +124,89 @@ bool GamingScene::Init()
 	Flag = LoadTexture(Resource::Texture::Flag, D3DCOLOR_XRGB(255, 255, 255));
 	if (!Flag)
 	{
-		ShowMessage("è£…è½½ æ——å­ çº¹ç†å¤±è´¥ï¼");
+		ShowMessage("×°ÔØ Æì×Ó ÎÆÀíÊ§°Ü£¡");
 		return false;
 	}
 	Something = LoadTexture(Resource::Texture::Something, D3DCOLOR_XRGB(255, 255, 255));
 	if (!Something)
 	{
-		ShowMessage("è£…è½½ æ‚é¡¹ çº¹ç†å¤±è´¥!");
+		ShowMessage("×°ÔØ ÔÓÏî ÎÆÀíÊ§°Ü!");
 		return false;
 	}
 	Tile = LoadTexture(Resource::Texture::Tile, D3DCOLOR_XRGB(4, 4, 4));
 	if (!Tile)
 	{
-		ShowMessage("è£…è½½ ç – çº¹ç†å¤±è´¥!");
+		ShowMessage("×°ÔØ ×© ÎÆÀíÊ§°Ü!");
 		return false;
 	}
 	Player_1 = LoadTexture(Resource::Texture::Player_1, D3DCOLOR_XRGB(0, 0, 0));
 	if (!Player_1)
 	{
-		ShowMessage("è£…è½½ ä¸»ç©å®¶ çº¹ç†å¤±è´¥!");
+		ShowMessage("×°ÔØ Ö÷Íæ¼Ò ÎÆÀíÊ§°Ü!");
 		return false;
 	}
 	Bullet_TXTTURE = LoadTexture(Resource::Texture::Bullet, D3DCOLOR_XRGB(4, 4, 4));
 	if (!Bullet_TXTTURE)
 	{
-		ShowMessage("è£…è½½ å­å¼¹ çº¹ç†å¤±è´¥!");
+		ShowMessage("×°ÔØ ×Óµ¯ ÎÆÀíÊ§°Ü!");
 		return false;
 	}
 	Boom1 = LoadTexture(Resource::Texture::Boom1, D3DCOLOR_XRGB(0, 0, 0));
 	if (!Boom1)
 	{
-		ShowMessage("è£…è½½ çˆ†ç‚¸ä¸€ çº¹ç†å¤±è´¥!");
+		ShowMessage("×°ÔØ ±¬Õ¨Ò» ÎÆÀíÊ§°Ü!");
 		return false;
 	}
 	Boom2 = LoadTexture(Resource::Texture::Boom2, D3DCOLOR_XRGB(4, 4, 4));
 	if (!Boom2)
 	{
-		ShowMessage("è£…è½½ çˆ†ç‚¸äºŒ çº¹ç†å¤±è´¥!");
+		ShowMessage("×°ÔØ ±¬Õ¨¶ş ÎÆÀíÊ§°Ü!");
 		return false;
 	}
 	Player_2 = LoadTexture(Resource::Texture::Player_2, D3DCOLOR_XRGB(0, 0, 0));
 	if (!Player_2)
 	{
-		ShowMessage("è£…è½½ ç©å®¶äºŒ çº¹ç†å¤±è´¥!");
+		ShowMessage("×°ÔØ Íæ¼Ò¶ş ÎÆÀíÊ§°Ü!");
 		return false;
 	}
 	Award = LoadTexture(Resource::Texture::Award, D3DCOLOR_XRGB(234, 234, 234));
 	if (!Award)
 	{
-		ShowMessage("è£…è½½ å¥–åŠ± çº¹ç†å¤±è´¥!");
+		ShowMessage("×°ÔØ ½±Àø ÎÆÀíÊ§°Ü!");
 		return false;
 	}
 	Shield = LoadTexture(Resource::Texture::Shield, D3DCOLOR_XRGB(234, 234, 234));
 	if (!Shield)
 	{
-		ShowMessage("è£…è½½ ç›¾ç‰Œ çº¹ç†å¤±è´¥!");
+		ShowMessage("×°ÔØ ¶ÜÅÆ ÎÆÀíÊ§°Ü!");
 		return false;
 	}
 	GameOver = LoadTexture(Resource::Texture::GameOver, D3DCOLOR_XRGB(0, 0, 0));
 	if (!GameOver)
 	{
-		ShowMessage("è£…è½½ æ¸¸æˆç»“æŸ çº¹ç†å¤±è´¥!");
+		ShowMessage("×°ÔØ ÓÎÏ·½áÊø ÎÆÀíÊ§°Ü!");
 		return false;
 	}
 	Enemy_TXTTURE = LoadTexture(Resource::Texture::Enemy, D3DCOLOR_XRGB(4, 4, 4));
 	if (!Enemy_TXTTURE)
 	{
-		ShowMessage("è£…è½½ æ•Œäºº çº¹ç†å¤±è´¥!");
+		ShowMessage("×°ÔØ µĞÈË ÎÆÀíÊ§°Ü!");
 		return false;
 	}
 	Hole = LoadTexture(Resource::Texture::Hole, D3DCOLOR_XRGB(4, 4, 4));
 	if (!Hole)
 	{
-		ShowMessage("è£…è½½ å­” çº¹ç†å¤±è´¥!");
+		ShowMessage("×°ÔØ ¿× ÎÆÀíÊ§°Ü!");
 		return false;
 	}
 	Number = LoadTexture(Resource::Texture::Number, D3DCOLOR_XRGB(255, 255, 255));
 	if (!Number)
 	{
-		ShowMessage("è£…è½½ æ•°å­— çº¹ç†å¤±è´¥!");
+		ShowMessage("×°ÔØ Êı×Ö ÎÆÀíÊ§°Ü!");
 		return false;
 	}
 
-	//è£…è½½é—ªå…‰
+	//×°ÔØÉÁ¹â
 	string png = ".png";
 	string path = "Resources\\Texture\\";
 	string buf;
@@ -220,7 +220,7 @@ bool GamingScene::Init()
 			ShowMessage(buf);
 	}
 	RECT rect;
-	int n = 0, i = 960;//æ— è®ºçª—å£å¤§å°ï¼Œæ¸¸æˆåˆ†è¾¨ç‡æ€»æ˜¯ä¸å˜
+	int n = 0, i = 960;//ÎŞÂÛ´°¿Ú´óĞ¡£¬ÓÎÏ··Ö±æÂÊ×ÜÊÇ²»±ä
 	int delayOld = GetTickCount();
 	d3dDev->BeginScene();
 	for (; n < Global::Window::ScreenHeight / 2; n += 8, i -= 8)
@@ -243,16 +243,16 @@ bool GamingScene::Init()
 		}
 		*/
 	}
-	//åœ¨è¿™é€‰æ‹©å…³å¡
+	//ÔÚÕâÑ¡Ôñ¹Ø¿¨
 	if (Global::DesignMap::NewMapName.length() != 0)
 		ReadMapInHD(Global::DesignMap::NewMapName);
 	else
-		ReadMapInHD(NowMapName);
-	//è¯»å–åœ°å›¾ä¿¡æ¯å¹¶åˆ›å»ºåœ°å›¾å—
+		ReadMapInHD("stage" + std::to_string(NowLevel));
+	//¶ÁÈ¡µØÍ¼ĞÅÏ¢²¢´´½¨µØÍ¼¿é
 	CreateMapPiece();
-	//åˆ¤æ–­æ˜¯å¦åŒäººæ¸¸æˆ
+	//ÅĞ¶ÏÊÇ·ñË«ÈËÓÎÏ·
 	IsDoublePlayer = Global::Home::selectedType == 1 ? true : false;
-	//æ’­æ”¾å¼€å§‹å£°éŸ³
+	//²¥·Å¿ªÊ¼ÉùÒô
 	if(Global::Sound::SoundSwicth)
 	Sound::Start->Play();
 	player.Born();
@@ -263,7 +263,7 @@ bool GamingScene::Init()
 
 void GamingScene::End()
 {
-	//æ¸…é™¤åœ°å›¾å—
+	//Çå³ıµØÍ¼¿é
 	MapPieceList*buf;
 	MapPieceList*mp = mappiecelisthead.next;
 	for (int i = 0; i < 13; i++)
@@ -282,21 +282,21 @@ void GamingScene::End()
 			}
 		}
 	mappiecelisthead.next = NULL;
-	//æ¸…é™¤æ•Œäºº
+	//Çå³ıµĞÈË
 	EnemyList* ep = enemylisthead.next;
 	while (ep != NULL)
 	{
 		AddUselessObj(ep->enemy->ID);
 		ep = ep->next;
 	}
-	//æ¸…é™¤å­å¼¹
+	//Çå³ı×Óµ¯
 	BulletList*bp = bulletlisthead.next;
 	while (bp != NULL)
 	{
 		AddUselessObj(bp->bullet->ID);
 		bp = bp->next;
 	}
-	//æ¸…é™¤çˆ†ç‚¸
+	//Çå³ı±¬Õ¨
 	BoomList*boomp = boomlisthead.next;
 	while (boomp != NULL)
 	{
@@ -305,7 +305,7 @@ void GamingScene::End()
 	}
 
 	ClearUselessObj();
-	//é‡ç½®ç©å®¶æ•°æ®
+	//ÖØÖÃÍæ¼ÒÊı¾İ
 	player.Speed = 5 * 64;
 	player.Attack_Speed = 5;
 	player.Dir = Dirction::up;
@@ -314,7 +314,7 @@ void GamingScene::End()
 	player.player.y = 64 * 13;
 	player.BulletSpeed = 64 * 12;
 	player.Lift = 1;
-	player.Health_Point = 1;//ç©å®¶è¡€é‡
+	player.Health_Point = 1;//Íæ¼ÒÑªÁ¿
 
 	if (IsDoublePlayer)
 	{
@@ -326,10 +326,10 @@ void GamingScene::End()
 		player2.player.y = 64 * 13;
 		player2.BulletSpeed = 64 * 12;
 		player2.Lift = 1;
-		player2.Health_Point = 1;//ç©å®¶è¡€é‡
+		player2.Health_Point = 1;//Íæ¼ÒÑªÁ¿
 
 	}
-	//é‡ç½®åœ°å›¾å˜é‡
+	//ÖØÖÃµØÍ¼±äÁ¿
 	SGOy = 960;
 	GameOverFlag = false;
 	EnemyNumber = 30;
@@ -357,14 +357,14 @@ void GamingScene::End()
 	if (Sound::Moving->IsSoundPlaying()) Sound::Moving->Stop();
 	if (Sound::BGM->IsSoundPlaying()) Sound::BGM->Stop();
 }
-//æ¸¸æˆæ¸²æŸ“
+//ÓÎÏ·äÖÈ¾
 void GamingScene::Render()
 {
 	d3dDev->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
 
-	/*æ¸¸æˆè¾¹æ¡†*/
+	/*ÓÎÏ·±ß¿ò*/
 	RECT rect;
-	FillRect(rect, 0, 1024, 32, 64);   //åˆ†è¾¨ç‡ä¸ä¸º1024*960æ—¶éœ€è¦ä¿®æ”¹
+	FillRect(rect, 0, 1024, 32, 64);   //·Ö±æÂÊ²»Îª1024*960Ê±ĞèÒªĞŞ¸Ä
 	d3dDev->StretchRect(GrayRect, NULL, backBuffer, &rect, D3DTEXF_NONE);
 	FillRect(rect, 0, 64, 64, 896);
 	d3dDev->StretchRect(GrayRect, NULL, backBuffer, &rect, D3DTEXF_NONE);
@@ -373,30 +373,30 @@ void GamingScene::Render()
 	FillRect(rect, 0, 1024, 896, 928);
 	d3dDev->StretchRect(GrayRect, NULL, backBuffer, &rect, D3DTEXF_NONE);
 
-	DrawNet();//ç”»ç½‘æ ¼ï¼Œæ­£å¼ç‰ˆåˆ é™¤
-			  /*æ¸¸æˆå†…å®¹*/
+	DrawNet();//»­Íø¸ñ£¬ÕıÊ½°æÉ¾³ı
+			  /*ÓÎÏ·ÄÚÈİ*/
 	spriteObj->Begin(D3DXSPRITE_ALPHABLEND);
 	Sprite_Transform_Draw(Flag, 926, 704, 32, 32, 0, 1, 0, 2.0, D3DCOLOR_XRGB(255, 255, 255));
-	//ç©å®¶ä¸€çš„ä¿¡æ¯
+	//Íæ¼ÒÒ»µÄĞÅÏ¢
 	Sprite_Transform_Draw(Something, 928, 512, 14, 14, 2, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
 	Sprite_Transform_Draw(Something, 960, 512, 14, 14, 3, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
 	Sprite_Transform_Draw(Something, 928, 544, 14, 14, 1, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-	//ç©å®¶äºŒçš„ä¿¡æ¯
+	//Íæ¼Ò¶şµÄĞÅÏ¢
 	if (IsDoublePlayer) {
 		Sprite_Transform_Draw(Something, 928, 608, 14, 14, 4, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
 		Sprite_Transform_Draw(Something, 960, 608, 14, 14, 3, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
 		Sprite_Transform_Draw(Something, 928, 640, 14, 14, 1, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
 	}
-	//ç”»ç©å®¶ä¸€
+	//»­Íæ¼ÒÒ»
 	if(player.Alive)
 	player.Draw();
-	//ç”»ç©å®¶äºŒ
+	//»­Íæ¼Ò¶ş
 	if (player2.Alive)
 	{
 		if (IsDoublePlayer)
 			player2.Draw();
 	}
-	//ç”»åœ°å›¾
+	//»­µØÍ¼
 	MapPieceList* mp = mappiecelisthead.next;
 	while (mp != NULL)
 	{
@@ -405,7 +405,7 @@ void GamingScene::Render()
 	}
 	//	DrawMap();
 	//		Sprite_Transform_Draw(Tile, 512, 832, 32, 32, 5, 7, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-	//æ¸²æŸ“å­å¼¹ å¹¶æ¸…é™¤å·²å¤±æ•ˆå­å¼¹
+	//äÖÈ¾×Óµ¯ ²¢Çå³ıÒÑÊ§Ğ§×Óµ¯
 	BulletList*bp = bulletlisthead.next;
 	while (bp != NULL)
 	{
@@ -413,7 +413,7 @@ void GamingScene::Render()
 		bp = bp->next;
 	}
 
-	//æ¸²æŸ“æ•Œäºº
+	//äÖÈ¾µĞÈË
 	EnemyList *ep = enemylisthead.next;
 	while (ep != NULL)
 	{
@@ -421,21 +421,21 @@ void GamingScene::Render()
 		ep = ep->next;
 	}
 
-	//æ¸²æŸ“çˆ†ç‚¸
+	//äÖÈ¾±¬Õ¨
 	BoomList *pboom = boomlisthead.next, *bbuf;
 	while (pboom != NULL)
 	{
 		pboom->boom->Draw();
 		pboom = pboom->next;
 	}
-	//æ¸¸æˆç»“æŸ
+	//ÓÎÏ·½áÊø
 	if (GameOverFlag)
 	{
 		ShowGameOver();
 	}
-	DIDA();//äº§ç”Ÿæ—¶é—´ä¿¡æ¯
+	DIDA();//²úÉúÊ±¼äĞÅÏ¢
 }
-//æ¸¸æˆé€»è¾‘æ›´æ–°
+//ÓÎÏ·Âß¼­¸üĞÂ
 void GamingScene::Update()
 {
 	unsigned long newtime;
@@ -456,12 +456,12 @@ void GamingScene::Update()
 			}
 	}
 	if (!GameOverFlag) {
-		//æ£€æŸ¥æ•Œäººæ•°é‡ åˆ¤æ–­æ˜¯å¦èƒœåˆ©
+		//¼ì²éµĞÈËÊıÁ¿ ÅĞ¶ÏÊÇ·ñÊ¤Àû
 		if (EnemyNumber <= 0)
 		{
 			StartNextStage();
 		}
-		//ç©å®¶ä¸€
+		//Íæ¼ÒÒ»
 		if (player.Alive)
 		{
 			if (KEY_DOWN(Global::PlayerControl::Player1[0]) && !KEY_DOWN(Global::PlayerControl::Player1[3]) && !KEY_DOWN(Global::PlayerControl::Player1[2]))
@@ -484,7 +484,7 @@ void GamingScene::Update()
 				player.Logic(Dirction::right);
 				//right
 			}
-			//ç©å®¶å°„å‡»
+			//Íæ¼ÒÉä»÷
 			static int ShootTime = 10;
 			if (ShowTime)
 				ShootTime++;
@@ -511,7 +511,7 @@ void GamingScene::Update()
 				Sound::Stop->Play();
 			}
 		}
-		//ç©å®¶äºŒ
+		//Íæ¼Ò¶ş
 		static int ShootTime2 = 10;
 		if (player2.Alive)
 		{
@@ -537,7 +537,7 @@ void GamingScene::Update()
 					player2.Logic(Dirction::right);
 					//right
 				}
-				//ç©å®¶å°„å‡»
+				//Íæ¼ÒÉä»÷
 				if (ShowTime)
 					ShootTime2++;
 				if (KEY_DOWN(Global::PlayerControl::Player2[4]))
@@ -550,33 +550,33 @@ void GamingScene::Update()
 				}
 			}
 		}
-		//æ›´æ–°å­å¼¹é€»è¾‘
+		//¸üĞÂ×Óµ¯Âß¼­
 		BulletList*bp = bulletlisthead.next;
 		while (bp != NULL)
 		{
 			bp->bullet->Logic();
 			bp = bp->next;
 		}
-		//æ›´æ–°æ•Œäººé€»è¾‘
+		//¸üĞÂµĞÈËÂß¼­
 		EnemyList*ep = enemylisthead.next;
 		while (ep != NULL)
 		{
 			ep->enemy->Logic(ShowTime);
 			ep = ep->next;
 		}
-		//ç”Ÿæˆæ–°æ•Œäºº
-		static int BornEnemy = 30;//ç”Ÿæˆæ•Œäººè®°æ—¶å™¨
+		//Éú³ÉĞÂµĞÈË
+		static int BornEnemy = 30;//Éú³ÉµĞÈË¼ÇÊ±Æ÷
 		static int NeedBornEnemy = 1;
 		if (NeedBornEnemy)
-			if (ShowTime)//ShowTime 100msä¸€æ¬¡
+			if (ShowTime)//ShowTime 100msÒ»´Î
 				BornEnemy++;
-		if (BornEnemy >= 10)//ç”Ÿæˆæ–°çš„æ•Œäºº
+		if (BornEnemy >= 10)//Éú³ÉĞÂµÄµĞÈË
 		{
 			if (HaveBornEnemyNumber > 30)
 				NeedBornEnemy = 0;
 			if (BornEnemyMapPiece.size() != 0)
 			{
-				//æ ¹æ®æ•Œäººç”Ÿæˆç‚¹æ¥éšæœºç”Ÿæˆæ•Œäºº
+				//¸ù¾İµĞÈËÉú³ÉµãÀ´Ëæ»úÉú³ÉµĞÈË
 				int atbuf= rand() % (BornEnemyMapPiece.size() / 2);
 				CreateEnemy((BornEnemyMapPiece.at(atbuf*2)+1) * 64,
 					(BornEnemyMapPiece.at(atbuf*2+1)+1) * 64,
@@ -594,14 +594,14 @@ void GamingScene::Update()
 			//	CreateEnemy(4 * 64, 3 * 64, 10, 1, 1, rand() % 7, rand() % 4);
 			BornEnemy = 0;
 		}
-		//æ›´æ–°çˆ†ç‚¸é€»è¾‘
+		//¸üĞÂ±¬Õ¨Âß¼­
 		BoomList*boomp = boomlisthead.next;
 		while (boomp != NULL)
 		{
 			boomp->boom->Logic();
 			boomp = boomp->next;
 		}
-		//åˆ¤æ–­ç©å®¶è¡€é‡ä»¥å†³å®šæ¸¸æˆçŠ¶æ€
+		//ÅĞ¶ÏÍæ¼ÒÑªÁ¿ÒÔ¾ö¶¨ÓÎÏ·×´Ì¬
 		if (!IsDoublePlayer)
 		{
 			if (player.Health_Point <= 0)
@@ -611,7 +611,7 @@ void GamingScene::Update()
 					player.Alive = false;
 				else
 					Player1.Born();
-				//åˆ›å»ºçˆ†ç‚¸
+				//´´½¨±¬Õ¨
 				CreateBoom(player.player.x,player.player.y, 2, player.Dir);
 			}
 			if (player.Lift <= 0)
@@ -630,7 +630,7 @@ void GamingScene::Update()
 						player.Alive = false;
 					else
 						Player1.Born();
-					//åˆ›å»ºçˆ†ç‚¸
+					//´´½¨±¬Õ¨
 					CreateBoom(player.player.x, player.player.y, 2, player.Dir);
 				}
 			}
@@ -642,7 +642,7 @@ void GamingScene::Update()
 					if (player2.Lift <= 0)
 						player2.Alive = false;
 					else
-						//åˆ›å»ºçˆ†ç‚¸
+						//´´½¨±¬Õ¨
 						CreateBoom(player2.player.x, player2.player.y, 2, player2.Dir);
 					player2.Born();
 				}
@@ -653,9 +653,9 @@ void GamingScene::Update()
 			}
 
 		}
-		//æ¸…é™¤å¤±æ•ˆå¯¹è±¡
+		//Çå³ıÊ§Ğ§¶ÔÏó
 		ClearUselessObj();
-		//è¯»å–æ—¶é—´å®Œæ¯• 
+		//¶ÁÈ¡Ê±¼äÍê±Ï 
 	}
 	else
 	{
@@ -669,14 +669,14 @@ void GamingScene::Update()
 	lasttime = GetTickCount();
 }
 /*--------------------------------------------------------------------
-GamingSceneçš„æ–¹æ³•åˆ°æ­¤ç»“æŸ
+GamingSceneµÄ·½·¨µ½´Ë½áÊø
 ----------------------------------------------------------------------*/
 
 
 /*--------------------------------------------------------------------
-GameSceneçš„æ–¹æ³•
+GameSceneµÄ·½·¨
 ----------------------------------------------------------------------*/
-//æ¸¸æˆç»“æŸç”»é¢
+//ÓÎÏ·½áÊø»­Ãæ
 void GS::ShowGameOver()
 	{
 		static int oldtime = GetTickCount();
@@ -694,15 +694,15 @@ void GS::ShowGameOver()
 				0, 1, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
 
 	}
-//ä¸“é—¨æœåŠ¡äºbullet::logicçš„ç¢°æ’æ£€æµ‹å‡½æ•°
+//×¨ÃÅ·şÎñÓÚbullet::logicµÄÅö×²¼ì²âº¯Êı
 int  GS::Crash(int iswho, int x, int y, int speed, int dir, 
 	           int shooter, unsigned long id, int movedmixel) {
-		//åœ°å›¾è¾¹ç•Œ
+		//µØÍ¼±ß½ç
 		static  RECT MapEdgeTop = { 0,0,1024,64 },
 			MapEdgeBelow = { 0,896,1024,960 },
 			MapEdgeLeft = { 0,0,64,960 },
 			MapEdgeRight = { 896,0,1024,960 };
-		//å…ˆæ£€æµ‹å­å¼¹æ˜¯å¦ç¢°æ’åˆ°æ•Œäºº
+		//ÏÈ¼ì²â×Óµ¯ÊÇ·ñÅö×²µ½µĞÈË
 		RECT BulletRect;
 		switch (dir)
 		{
@@ -749,12 +749,12 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 					CreateBoom(ep->enemy->player.x, ep->enemy->player.y, 2, ep->enemy->Dir);
 					DelListNode(enemylisthead.next, ep->enemy->ID);
 					EnemyNumber--;
-					return 2;//é”€æ¯è‡ªå·±
+					return 2;//Ïú»Ù×Ô¼º
 				}
 				ep = ep->next;
 			}
 		}
-		//æ£€æµ‹æ•Œäººå­å¼¹æ˜¯å¦å‘½ä¸­ç©å®¶
+		//¼ì²âµĞÈË×Óµ¯ÊÇ·ñÃüÖĞÍæ¼Ò
 		RECT PlayerRect;
 		if (shooter == 2)
 		{
@@ -787,7 +787,7 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 				}
 			}
 		}
-		//æ£€æµ‹å­å¼¹ç¢°æ’
+		//¼ì²â×Óµ¯Åö×²
 		BulletList*bp = bulletlisthead.next;
 		RECT BulletRectTest;
 		while (bp != NULL)
@@ -827,10 +827,10 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 		}
 		ep = ep->next;
 		}
-		return 2;//ç›®å‰ä¸ºæµ‹è¯•çŠ¶æ€ æ­£å¼ç‰ˆåº”ä¸ºçˆ†ç‚¸2
+		return 2;//Ä¿Ç°Îª²âÊÔ×´Ì¬ ÕıÊ½°æÓ¦Îª±¬Õ¨2
 		}
 		}*/
-		//æ£€æµ‹æ˜¯å¦ç¢°æ’åˆ°ç –å—
+		//¼ì²âÊÇ·ñÅö×²µ½×©¿é
 		//	int x1 = x - 20, y1 = y - 20;
 		int X1, Y1, X2, Y2;
 		switch (dir)
@@ -919,7 +919,7 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 		}
 		if (crashflag1 || crashflag2)
 			return 1;
-		//å¦«â‚¬å¨´å¬ªç“™å¯®è§„æ§¸éšï¹€æ‡¡æ¶“î…Ÿæ£—ç”¯æ»ç´™é©å“„æ¹´é”›?
+		//æ£€æµ‹å­å¼¹æ˜¯å¦å‘½ä¸­æ——å¸œï¼ˆåŸºåœ°ï¼?
 		{
 			RECT FlagRect = { 926, 704, 990, 768 };
 			if (IntersectRect(&Rect, &FlagRect, &BulletRect))
@@ -954,7 +954,7 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 		}
 		return 0;
 	}
-//æ¸¸æˆåœ°å›¾ç»˜ç”»å‡½æ•°       
+//ÓÎÏ·µØÍ¼»æ»­º¯Êı       
 void GS::DrawMap()
 	{
 		for (int i = 0; i < 13; i++)
@@ -1052,26 +1052,26 @@ void GS::DrawMap()
 				}
 			}
 	}
-//åˆ›å»ºåœ°å›¾ç²¾çµ
+//´´½¨µØÍ¼¾«Áé
 void GS::CreateMapPiece()
 	{
 		for (int x = 0; x < 13; x++)
 			for (int y = 0; y < 13; y++) {
 
 				if (Map[y][x] != 0) {
-					//è®°å½•ç©å®¶ä¸€çš„å‡ºç”Ÿåœ°ç‚¹
+					//¼ÇÂ¼Íæ¼ÒÒ»µÄ³öÉúµØµã
 					if (Map[y][x] == 31)
 					{
 						BornPlayer1MapPiece.push_back(x);
 						BornPlayer1MapPiece.push_back(y);
 					}
-					//è®°å½•ç©å®¶äºŒçš„å‡ºç”Ÿåœ°ç‚¹
+					//¼ÇÂ¼Íæ¼Ò¶şµÄ³öÉúµØµã
 					if (Map[y][x] == 32)
 					{
 						BornPlayer2MapPiece.push_back(x);
 						BornPlayer2MapPiece.push_back(y);
 					}
-					//è®°å½•æ•Œäººçš„å‡ºç”Ÿåœ°ç‚¹
+					//¼ÇÂ¼µĞÈËµÄ³öÉúµØµã
 					if (Map[y][x] == 33)
 					{
 						BornEnemyMapPiece.push_back(x);
@@ -1084,7 +1084,7 @@ void GS::CreateMapPiece()
 					b->X = x;
 					b->Y = y;
 					b->Create(Map[y][x]);
-					//æŠŠæ–°åœ°å›¾å—é“¾æ¥åˆ°é“¾è¡¨
+					//°ÑĞÂµØÍ¼¿éÁ´½Óµ½Á´±í
 					if (h == NULL)
 					{
 						mappiecelisthead.next = New;
@@ -1110,7 +1110,7 @@ void GS::CreateMapPiece()
 				}
 			}
 	}
-//è¯»å–ç¡¬ç›˜ä¸Šåœ°å›¾çš„ä¿¡æ¯
+//¶ÁÈ¡Ó²ÅÌÉÏµØÍ¼µÄĞÅÏ¢
 bool GS::ReadMapInHD(string filename)
 {
 	char buf[13][13];
@@ -1124,13 +1124,13 @@ bool GS::ReadMapInHD(string filename)
 		//ShowMessage("sd");
 		return false;
 	}
-	//ä»æ–‡ä»¶ä¸­è¯»å–åœ°å›¾ä¿¡æ¯
+	//´ÓÎÄ¼şÖĞ¶ÁÈ¡µØÍ¼ĞÅÏ¢
 	for (int i = 0; i < 13; i++)
 		for (int j = 0; j < 13; j++)
 		{
 			in.read(&buf[i][j], 1);
 		}
-	//è½¬æ¢ä¸ºå½“å‰åœ°å›¾
+	//×ª»»Îªµ±Ç°µØÍ¼
 	for (int i = 0; i < 13; i++)
 		for (int j = 0; j < 13; j++)
 		{
@@ -1151,13 +1151,13 @@ bool GS::ReadMapInHD(char*filename)
 		{
 			ShowMessage(sbuf);
 		}
-		//ä»æ–‡ä»¶ä¸­è¯»å–åœ°å›¾ä¿¡æ¯
+		//´ÓÎÄ¼şÖĞ¶ÁÈ¡µØÍ¼ĞÅÏ¢
 		for (int i = 0; i < 13; i++)
 			for (int j = 0; j < 13; j++)
 			{
 				in.read(&buf[i][j], 1);
 			}
-		//è½¬æ¢ä¸ºå½“å‰åœ°å›¾
+		//×ª»»Îªµ±Ç°µØÍ¼
 		for (int i = 0; i < 13; i++)
 			for (int j = 0; j < 13; j++)
 			{
@@ -1166,7 +1166,7 @@ bool GS::ReadMapInHD(char*filename)
 
 		return 0;
 	}
-//å†™å½“å‰åœ°å›¾ä¿¡æ¯åˆ°ç¡¬ç›˜
+//Ğ´µ±Ç°µØÍ¼ĞÅÏ¢µ½Ó²ÅÌ
 bool GS::WriteMapToHD(char*filename)
 	{
 		char buf;
@@ -1184,7 +1184,7 @@ bool GS::WriteMapToHD(char*filename)
 		return 0;
 	}
 
-//åˆ›å»ºçˆ†ç‚¸
+//´´½¨±¬Õ¨
 void GS::CreateBoom(int x, int y, int whatboom, int Dir)
 	{
 		BoomFire*b = new BoomFire(x, y, whatboom, Dir);
@@ -1217,14 +1217,14 @@ void GS::CreateBoom(int x, int y, int whatboom, int Dir)
 		}
 
 	}
-//åˆ›å»ºæ•Œäºº
+//´´½¨µĞÈË
 void GS::CreateEnemy(int x, int y, int speed, int hp,
 	                 int as, int grade, int dir)
 	{
 		int NewEnemyX = x;
 		int NewEnemyY = y;
 
-		//ç”Ÿæˆæ•Œäººå¯¹è±¡
+		//Éú³ÉµĞÈË¶ÔÏó
 		Enemy*e = new Enemy(NewEnemyX, NewEnemyY, speed, hp, as, grade, dir);
 		IDNumber++;
 		e->ID = IDNumber;
@@ -1255,8 +1255,8 @@ void GS::CreateEnemy(int x, int y, int speed, int hp,
 		}
 
 	}
-/*å·¥å…·å‡½æ•°*/
-//å¡«å……RECT
+/*¹¤¾ßº¯Êı*/
+//Ìî³äRECT
 void GS::FillRect(RECT&rect, long l = -1, long r = -1, 
 	              long t = -1, long b = -1)
 	{
@@ -1265,7 +1265,7 @@ void GS::FillRect(RECT&rect, long l = -1, long r = -1,
 		rect.top = t;
 		rect.bottom = b;
 	}
-//è¯»å–åœ°å›¾ä¿¡æ¯
+//¶ÁÈ¡µØÍ¼ĞÅÏ¢
 void GS::ReadMap(int x, int y, RECT&rect1, RECT&rect2)
 	{
 		switch (Map[y][x])
@@ -1350,7 +1350,7 @@ void GS::ReadMap(int x, int y, RECT&rect1, RECT&rect2)
 			break;
 		}
 	}
-//ç”»è¾…åŠ©ç½‘æ ¼
+//»­¸¨ÖúÍø¸ñ
 void GS::DrawNet()
 	{
 		RECT rect;
@@ -1366,11 +1366,11 @@ void GS::DrawNet()
 			d3dDev->StretchRect(BlackRect, NULL, backBuffer, &rect, D3DTEXF_NONE);
 		}
 	}
-//æ¸…é™¤å¤±æ•ˆå¯¹è±¡
+//Çå³ıÊ§Ğ§¶ÔÏó
 void GS::ClearUselessObj()
 	{
 		UselessObj*up = uselessobjhead.next;
-		//æ¸…é™¤å¤±æ•ˆå­å¼¹
+		//Çå³ıÊ§Ğ§×Óµ¯
 		BulletList*b = bulletlisthead.next;
 		while (up != NULL)
 		{
@@ -1394,7 +1394,7 @@ void GS::ClearUselessObj()
 				up = up->next;
 		}
 	
-		//æ¸…é™¤å¤±æ•ˆæ•Œäººå¹¶åˆ›é€ çˆ†ç‚¸
+		//Çå³ıÊ§Ğ§µĞÈË²¢´´Ôì±¬Õ¨
 		up = uselessobjhead.next;
 		EnemyList*ep = enemylisthead.next;
 		while (up != NULL)
@@ -1420,7 +1420,7 @@ void GS::ClearUselessObj()
 		up = up->next;
 		}
 
-		//æ¸…é™¤å¤±æ•ˆçˆ†ç‚¸
+		//Çå³ıÊ§Ğ§±¬Õ¨
 		up = uselessobjhead.next;
 		BoomList*bp = boomlisthead.next;
 		while (up != NULL)
@@ -1454,7 +1454,7 @@ void GS::AddUselessObj(unsigned long id)
 		p->ID = id;
 		uselessobjhead.next = p;
 	}
-//åˆ é™¤é“¾è¡¨å…ƒç´ 
+//É¾³ıÁ´±íÔªËØ
 void GS::DelUselessObj()
 	{
 		UselessObj*p = uselessobjhead.next;
@@ -1463,7 +1463,7 @@ void GS::DelUselessObj()
 		delete p;
 	}
 
-bool GS::DelListNode(EnemyList*listhead, unsigned long id)//åˆ é™¤æˆåŠŸè¿”å›trueï¼Œå¦åˆ™è¿”å›false
+bool GS::DelListNode(EnemyList*listhead, unsigned long id)//É¾³ı³É¹¦·µ»Øtrue£¬·ñÔò·µ»Øfalse
 	{
 		EnemyList*p = listhead;
 		while (p != NULL)
@@ -1497,7 +1497,7 @@ bool GS::DelListNode(EnemyList*listhead, unsigned long id)//åˆ é™¤æˆåŠŸè¿”å›tr
 		return false;
 	}
 
-bool GS::DelListNode(BulletList*listhead, unsigned long id)//åˆ é™¤æˆåŠŸè¿”å›trueï¼Œå¦åˆ™è¿”å›false
+bool GS::DelListNode(BulletList*listhead, unsigned long id)//É¾³ı³É¹¦·µ»Øtrue£¬·ñÔò·µ»Øfalse
 	{
 		BulletList*p = listhead;
 		while (p != NULL)
@@ -1531,7 +1531,7 @@ bool GS::DelListNode(BulletList*listhead, unsigned long id)//åˆ é™¤æˆåŠŸè¿”å›t
 		return false;
 	}
 
-bool GS::DelListNode(BoomList*listhead, unsigned long id)//åˆ é™¤æˆåŠŸè¿”å›trueï¼Œå¦åˆ™è¿”å›false
+bool GS::DelListNode(BoomList*listhead, unsigned long id)//É¾³ı³É¹¦·µ»Øtrue£¬·ñÔò·µ»Øfalse
 	{
 		BoomList*p = listhead;
 		while (p != NULL)
@@ -1564,7 +1564,7 @@ bool GS::DelListNode(BoomList*listhead, unsigned long id)//åˆ é™¤æˆåŠŸè¿”å›tru
 		}
 		return false;
 	}
-//äº§ç”Ÿæ—¶é—´è„‰å†²
+//²úÉúÊ±¼äÂö³å
 void GS::DIDA() {
 		NowTime = (int)GetTickCount();
 		if (NowTime > StartTime + 100)
@@ -1578,7 +1578,7 @@ void GS::DIDA() {
 
 void GS::NewStage()
 {
-	//æ¸…é™¤åœ°å›¾å—
+	//Çå³ıµØÍ¼¿é
 	MapPieceList*buf;
 	MapPieceList*mp = mappiecelisthead.next;
 	for (int i = 0; i < 13; i++)
@@ -1597,21 +1597,21 @@ void GS::NewStage()
 			}
 		}
 	mappiecelisthead.next = NULL;
-	//æ¸…é™¤æ•Œäºº
+	//Çå³ıµĞÈË
 	EnemyList* ep = enemylisthead.next;
 	while (ep != NULL)
 	{
 		AddUselessObj(ep->enemy->ID);
 		ep = ep->next;
 	}
-	//æ¸…é™¤å­å¼¹
+	//Çå³ı×Óµ¯
 	BulletList*bp = bulletlisthead.next;
 	while (bp != NULL)
 	{
 		AddUselessObj(bp->bullet->ID);
 		bp = bp->next;
 	}
-	//æ¸…é™¤çˆ†ç‚¸
+	//Çå³ı±¬Õ¨
 	BoomList*boomp = boomlisthead.next;
 	while (boomp != NULL)
 	{
@@ -1620,7 +1620,7 @@ void GS::NewStage()
 	}
 
 	ClearUselessObj();
-	//é‡ç½®ç©å®¶æ•°æ®
+	//ÖØÖÃÍæ¼ÒÊı¾İ
 	player.Speed = 5 * 64;
 	player.Attack_Speed = 5;
 	player.Dir = Dirction::up;
@@ -1629,7 +1629,7 @@ void GS::NewStage()
 	player.player.y = 64 * 13;
 	player.BulletSpeed = 64 * 12;
 	player.Lift = 1;
-	player.Health_Point = 1;//ç©å®¶è¡€é‡
+	player.Health_Point = 1;//Íæ¼ÒÑªÁ¿
 
 	if (IsDoublePlayer)
 	{
@@ -1641,10 +1641,10 @@ void GS::NewStage()
 		player2.player.y = 64 * 13;
 		player2.BulletSpeed = 64 * 12;
 		player2.Lift = 1;
-		player2.Health_Point = 1;//ç©å®¶è¡€é‡
+		player2.Health_Point = 1;//Íæ¼ÒÑªÁ¿
 
 	}
-	//é‡ç½®åœ°å›¾å˜é‡
+	//ÖØÖÃµØÍ¼±äÁ¿
 	SGOy = 960;
 	GameOverFlag = false;
 	EnemyNumber = 30;
@@ -1657,20 +1657,12 @@ void GS::NewStage()
 
 void GS::ReadNextMap()
 {
-	//ä½¿å½“å‰åœ°å›¾æ–‡ä»¶åå˜ä¸ºä¸‹ä¸€ä¸ªæ–‡ä»¶å
-	string sbuf=NowMapName.substr(5,NowMapName.size());
-	int ibuf = atoi(sbuf.c_str());
-	ibuf++;
-	char cbuf[20];
-	_itoa_s(ibuf, cbuf, 10);
-	NowMapName.erase(5, NowMapName.size());
-	NowMapName += cbuf;
-	//
-	if(!ReadMapInHD(NowMapName))
+	NowLevel++;
+	string mapName = "stage" + std::to_string(NowLevel);
+	if(!ReadMapInHD(mapName))
 	{
 		Game_ChangeScene(GAME_STATE::Home);
 	}
-	//
 	CreateMapPiece();
 }
 
@@ -1686,10 +1678,10 @@ void GS::RestartThisStage()
 	CreateMapPiece();
 }
 /*--------------------------------------------------------------------
-GameSceneçš„æ–¹æ³•åˆ°æ­¤ç»“æŸ
+GameSceneµÄ·½·¨µ½´Ë½áÊø
 ----------------------------------------------------------------------*/
 
-//æ•ŒäººAI
+//µĞÈËAI
 int* idiot(int state, bool cflag)
 {
 	static int a[2];
@@ -1698,7 +1690,7 @@ int* idiot(int state, bool cflag)
 		if ((rand() % 5) == 1)
 		{
 			a[0] = state;
-			a[1] = 1;//å¼€ç‚®
+			a[1] = 1;//¿ªÅÚ
 			return a;
 		}
 		a[0] = rand() % 4;
@@ -1723,7 +1715,7 @@ int* idiot(int state, bool cflag)
 	return a;
 
 }
-//æ•Œäººçš„æ„é€ å‡½æ•°
+//µĞÈËµÄ¹¹Ôìº¯Êı
 Enemy::Enemy(int x, int y, int speed, int hp,
 	         int as,int grade,int dir)
 {
@@ -1736,7 +1728,7 @@ Enemy::Enemy(int x, int y, int speed, int hp,
 	Dir = dir;
 	Time = 0;
 }
-//æ•Œäººçš„æ¸²æŸ“æ–¹æ³•
+//µĞÈËµÄäÖÈ¾·½·¨
 bool Enemy::Draw()
 {
 	if (Grade <= 3) {
@@ -1769,7 +1761,7 @@ bool Enemy::Draw()
 		return true;
 
 }
-//æ•Œäººé€»è¾‘
+//µĞÈËÂß¼­
 bool Enemy::Logic(bool st)
 {
 	int *a=idiot(Dir, CrashingFlag);
@@ -1819,7 +1811,7 @@ bool Enemy::Logic(bool st)
 	}
 	RECT PlayerRect = { player.x,player.y,player.x + 56,player.y + 56 };
 	RECT Rect;
-	//å’Œåœ°å›¾å—çš„ç¢°æ’æ£€æµ‹
+	//ºÍµØÍ¼¿éµÄÅö×²¼ì²â
 	{
 		int X1, Y1, X2, Y2;
 		switch (d)
@@ -1984,11 +1976,46 @@ bool Enemy::Logic(bool st)
 			}
 		}
 	}
-	return false;
+		// Enemy-enemy collision
+	{
+		EnemyList* other = enemylisthead.next;
+		while (other != NULL)
+		{
+			if (other->enemy != this && other->enemy->player.alive)
+			{
+				RECT otherRect = { (long)other->enemy->player.x, (long)other->enemy->player.y,
+					(long)other->enemy->player.x + 56, (long)other->enemy->player.y + 56 };
+				RECT tmpRect;
+				if (IntersectRect(&tmpRect, &otherRect, &PlayerRect))
+				{
+					CrashingFlag = true;
+					switch (d)
+					{
+					case Dirction::up:
+						player.y = other->enemy->player.y + 56;
+						break;
+					case Dirction::right:
+						player.x = other->enemy->player.x - 56;
+						break;
+					case Dirction::below:
+						player.y = other->enemy->player.y - 56;
+						break;
+					case Dirction::lift:
+						player.x = other->enemy->player.x + 56;
+						break;
+					default:
+						break;
+					}
+				}
+			}
+			other = other->next;
+		}
+	}
+return false;
 }
 
 
-//çˆ†ç‚¸æ¸²æŸ“æ–¹æ³•
+//±¬Õ¨äÖÈ¾·½·¨
 bool BoomFire::Draw()
 {
 
@@ -2011,7 +2038,7 @@ bool BoomFire::Draw()
 	}
 	return true;
 }
-//çˆ†ç‚¸é€»è¾‘
+//±¬Õ¨Âß¼­
 void BoomFire::Logic()
 {
 	if (WhatBoom == 1)
@@ -2025,7 +2052,7 @@ void BoomFire::Logic()
 	}
 	return;
 }
-//çˆ†ç‚¸æ„é€ å‡½æ•°
+//±¬Õ¨¹¹Ôìº¯Êı
 BoomFire::BoomFire(int x, int y, int wb, int d) :
 	x(x), y(y), WhatBoom(wb), Dir(d)
 {
@@ -2033,12 +2060,12 @@ BoomFire::BoomFire(int x, int y, int wb, int d) :
 }
 
 /*--------------------------------------------------------------------
-ç©å®¶çš„æ–¹æ³•
+Íæ¼ÒµÄ·½·¨
 ----------------------------------------------------------------------*/
-//åˆå§‹åŒ–ç©å®¶ä¿¡æ¯
+//³õÊ¼»¯Íæ¼ÒĞÅÏ¢
 Player::Player()
 {
-	Health_Point = 1;//ç©å®¶è¡€é‡
+	Health_Point = 1;//Íæ¼ÒÑªÁ¿
 	Speed = 5*64;
 	Attack_Speed = 5;
 	Dir = Dirction::up;
@@ -2058,7 +2085,7 @@ Player::Player()
 	Alive = true;
 	FlashFlag = false;
 }
-//ç©å®¶å°„å‡»
+//Íæ¼ÒÉä»÷
 bool Player::Shoot(int shooter,int powlv) {
 	Bullet*b = new Bullet(shooter,Player::player.x,Player::player.y,
 		Player::BulletSpeed, Player::Dir,powlv);
@@ -2069,7 +2096,7 @@ bool Player::Shoot(int shooter,int powlv) {
 	BulletList*c = bulletlisthead.next;
 	if (c == NULL)
 	{
-		bulletlisthead.next = new BulletList;//å°†å­å¼¹æ’å…¥å­å¼¹é“¾è¡¨
+		bulletlisthead.next = new BulletList;//½«×Óµ¯²åÈë×Óµ¯Á´±í
 		bulletlisthead.next->bullet = b;
 		bulletlisthead.next->next = c;
 		bulletlisthead.next->last = NULL;
@@ -2094,7 +2121,7 @@ bool Player::Shoot(int shooter,int powlv) {
 	}
 		return true;
 }
-//ç©å®¶æ¸²æŸ“æ–¹æ³•
+//Íæ¼ÒäÖÈ¾·½·¨
 bool Player::Draw()
 {
 	static int FlashTimes = 300;
@@ -2133,7 +2160,7 @@ bool Player::Draw()
 	}
 	return false;
 }
-//ç©å®¶é€»è¾‘æ–¹æ³•
+//Íæ¼ÒÂß¼­·½·¨
 bool Player::Logic(int d)
 {
 	double srtime = GetTickCount() - lasttime;
@@ -2168,7 +2195,7 @@ bool Player::Logic(int d)
 	}
 	RECT PlayerRect = { player.x,player.y,player.x + 56,player.y + 56 };
 	RECT EnemyRect, Rect;
-	//å’Œåœ°å›¾å—çš„ç¢°æ’æ£€æµ‹
+	//ºÍµØÍ¼¿éµÄÅö×²¼ì²â
 	{
 		int X1, Y1, X2, Y2;
 		switch (d)
@@ -2272,7 +2299,7 @@ bool Player::Logic(int d)
 			}
 		}
 	}
-    //å’Œæ•Œäººçš„ç¢°æ’æ£€æµ‹
+    //ºÍµĞÈËµÄÅö×²¼ì²â
 	EnemyList* ep = enemylisthead.next;
 	while (ep != NULL)
 	{
@@ -2282,7 +2309,7 @@ bool Player::Logic(int d)
 		EnemyRect.right = ep->enemy->player.x + 56;
 		if (IntersectRect(&Rect, &EnemyRect, &PlayerRect))
 		{
-			// ç¢°åˆ°æ•Œäººåå›é€€ç§»åŠ¨è·ç¦»
+			// Åöµ½µĞÈËºó»ØÍËÒÆ¶¯¾àÀë
 			switch (d)
 			{
 			case Dirction::up:
@@ -2303,7 +2330,7 @@ bool Player::Logic(int d)
 		}
 		ep = ep->next;
 	}
-	//å’Œç©å®¶äºŒçš„ç¢°æ’æ£€æµ‹
+	//ºÍÍæ¼Ò¶şµÄÅö×²¼ì²â
 	if (IsDoublePlayer)
 	{
 		if (player2.Alive)
@@ -2336,7 +2363,7 @@ bool Player::Logic(int d)
 	}
 	return false;
 }
-//ç©å®¶è¢«å‡»ä¸­å¤„ç†æ–¹æ³•
+//Íæ¼Ò±»»÷ÖĞ´¦Àí·½·¨
 bool Player::GetHurt(int power)
 {
 	Health_Point--;
@@ -2349,7 +2376,7 @@ bool Player::GetHurt(int power)
 	else
 		return true;
 }
-//ç©å®¶é‡æ–°ç”Ÿæˆæ–¹æ³•
+//Íæ¼ÒÖØĞÂÉú³É·½·¨
 void Player::Born()
 {
 	Health_Point = 1;
@@ -2367,11 +2394,11 @@ void Player::Born()
 	}
 }
 
-//ç©å®¶äºŒ
-//åˆå§‹åŒ–ç©å®¶äºŒä¿¡æ¯
+//Íæ¼Ò¶ş
+//³õÊ¼»¯Íæ¼Ò¶şĞÅÏ¢
 Player2::Player2()
 {
-	Health_Point = 1;//ç©å®¶è¡€é‡
+	Health_Point = 1;//Íæ¼ÒÑªÁ¿
 	Speed = 5 * 64;
 	Attack_Speed = 5;
 	Dir = Dirction::up;
@@ -2389,7 +2416,7 @@ Player2::Player2()
 	Lift = 99;
 
 }
-//ç©å®¶äºŒæ¸²æŸ“æ–¹æ³•
+//Íæ¼Ò¶şäÖÈ¾·½·¨
 bool Player2::Draw()
 {
 	static int FlashTimes = 300;
@@ -2428,7 +2455,7 @@ bool Player2::Draw()
 	return false;
 
 }
-//ç©å®¶äºŒé€»è¾‘æ–¹æ³•
+//Íæ¼Ò¶şÂß¼­·½·¨
 bool Player2::Logic(int d)
 {
 	double srtime = GetTickCount() - lasttime;
@@ -2463,7 +2490,7 @@ bool Player2::Logic(int d)
 	}
 	RECT PlayerRect = { player.x,player.y,player.x + 56,player.y + 56 };
 	RECT EnemyRect, Rect;
-	//å’Œåœ°å›¾å—çš„ç¢°æ’æ£€æµ‹
+	//ºÍµØÍ¼¿éµÄÅö×²¼ì²â
 	{
 		int X1, Y1, X2, Y2;
 		switch (d)
@@ -2567,7 +2594,7 @@ bool Player2::Logic(int d)
 			}
 		}
 	}
-	//å’Œæ•Œäººçš„ç¢°æ’æ£€æµ‹
+	//ºÍµĞÈËµÄÅö×²¼ì²â
 	EnemyList* ep = enemylisthead.next;
 	while (ep != NULL)
 	{
@@ -2577,7 +2604,7 @@ bool Player2::Logic(int d)
 		EnemyRect.right = ep->enemy->player.x + 56;
 		if (IntersectRect(&Rect, &EnemyRect, &PlayerRect))
 		{
-			// ç¢°åˆ°æ•Œäººåå›é€€ç§»åŠ¨è·ç¦»
+			// Åöµ½µĞÈËºó»ØÍËÒÆ¶¯¾àÀë
 			switch (d)
 			{
 			case Dirction::up:
@@ -2598,7 +2625,7 @@ bool Player2::Logic(int d)
 		}
 		ep = ep->next;
 	}
-	//å’Œç©å®¶ä¸€çš„ç¢°æ’æ£€æµ‹
+	//ºÍÍæ¼ÒÒ»µÄÅö×²¼ì²â
 	if (Player1.Alive)
 	{
 		EnemyRect.bottom = Player1.player.y + 56;
@@ -2646,10 +2673,10 @@ void Player2::Born()
 
 }
 /*--------------------------------------------------------------------
-ç©å®¶çš„æ–¹æ³•åˆ°æ­¤ç»“æŸ
+Íæ¼ÒµÄ·½·¨µ½´Ë½áÊø
 ----------------------------------------------------------------------*/
 
-//å­å¼¹å¯¹è±¡æ„é€ å‡½æ•°
+//×Óµ¯¶ÔÏó¹¹Ôìº¯Êı
 Bullet::Bullet(int shooter,int x, int y, int S, int D,int powlv) :Speed(S), Dir(D),Shooter(shooter)
 {
 	BoomFlag = 0;
@@ -2680,10 +2707,10 @@ Bullet::Bullet(int shooter,int x, int y, int S, int D,int powlv) :Speed(S), Dir(
 		break;
 	}
 }
-//å­å¼¹ç§»åŠ¨å’Œç¢°æ’æ£€æµ‹æ–¹æ³•
+//×Óµ¯ÒÆ¶¯ºÍÅö×²¼ì²â·½·¨
 bool Bullet::Logic()
 {
-	//ç¢°æ’æ£€æµ‹
+	//Åö×²¼ì²â
 	 double srtime = GetTickCount() - lasttime;
 	MovedPixel = Speed*srtime / 1000;
 	switch (Dir)
@@ -2708,8 +2735,8 @@ bool Bullet::Logic()
 	if (result == 1)
 	{
 		if(PowerLevel==0)
-		AddUselessObj(ID);//è®°å½•å¯¹è±¡IDç”¨äºé”€æ¯
-		//åˆ›å»ºçˆ†ç‚¸
+		AddUselessObj(ID);//¼ÇÂ¼¶ÔÏóIDÓÃÓÚÏú»Ù
+		//´´½¨±¬Õ¨
 		CreateBoom(bullet.x-20, bullet.y-20, 1, Dir);
 	}
 	if (result == 2)
@@ -2727,7 +2754,7 @@ bool Bullet::Logic()
 
 	return false;
 }
-//å­å¼¹æ¸²æŸ“æ–¹æ³•
+//×Óµ¯äÖÈ¾·½·¨
 bool Bullet::Draw()
 {
 	if (BoomFlag == 0) {
@@ -2771,7 +2798,7 @@ bool Bullet::Draw()
 }
 
 /*--------------------------------------------------------------------
-Class MapPieceçš„æ–¹æ³•
+Class MapPieceµÄ·½·¨
 ----------------------------------------------------------------------*/
      MapPiece::MapPiece()
 {
@@ -2808,7 +2835,7 @@ void MapPiece::Draw()
 		rp = rp->next;
 	}
 }
-//åˆ›å»ºåœ°å›¾æ–¹æ¡†
+//´´½¨µØÍ¼·½¿ò
 void MapPiece::CreateMapRect(int x, int y, int wight, int hight)
 {
 	RECT *b = new RECT;
@@ -3562,5 +3589,5 @@ int  MapPiece::PECrach(int dir, RECT&playerrect)
 	return result;
 }
 /*--------------------------------------------------------------------
-Class MapPieceçš„æ–¹æ³•åˆ°æ­¤ç»“æŸ
+Class MapPieceµÄ·½·¨µ½´Ë½áÊø
 ----------------------------------------------------------------------*/

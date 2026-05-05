@@ -1,14 +1,15 @@
-ï»¿#include "AboutScene.h"
+#include "AboutScene.h"
 #include"DirectX.h"
 #include"GameMain.h"
 float cx1 = 150, cx2 = 200, cx3 = 300;
 float cx4 = 777, cx5 = 500, cx6 = 50;
 float cx7 = 2333, cx8 = 666, cx9 = 555;
 float c1=255, c2=255, c3 = 255;
+static DWORD about_lasttime = 0;
 static LPD3DXFONT font;
 bool AboutScene::Init()
 {
-	 font = MakeFont("å®‹ä½“", 50);
+	 font = MakeFont("ËÎÌå", 50);
     background = LoadSurface(Resource::About::Backgroud);
 	Could1 = LoadTexture(Resource::About::Cloud1, D3DCOLOR_XRGB(255, 255, 255));
 	Could2 = LoadTexture(Resource::About::Cloud2, D3DCOLOR_XRGB(255, 255, 255));
@@ -16,6 +17,7 @@ bool AboutScene::Init()
 	Mountain = LoadTexture(Resource::About::BKG);
 	Feiting =LoadTexture(Resource::About::Feiting);
  //   return background != NULL;
+	about_lasttime = timeGetTime();
 	if (Global::Sound::SoundSwicth)
 		LoopSound(Sound::BGM);
 	return true;
@@ -78,68 +80,52 @@ void AboutScene::Render()
 	Sprite_Transform_Draw(Could2, cx8, 350, 354, 144, 0, 1, 0, 0.5, D3DCOLOR_XRGB(255, 255, 255));
 	Sprite_Transform_Draw(Could3, cx9, 480, 210, 62, 0, 1, 0, 1.01, D3DCOLOR_XRGB(255, 255, 255));
 	string text;
-	text += "ä½œè€…ï¼šXK|YYQ";
+	text += "×÷Õß£ºXK|YYQ";
 
 	FontPrint(font, 0, 90 ,text, D3DCOLOR_XRGB((int)c1, (int)c2, (int)c3));
-	c1 -= 0.5;
-	c2 -= 0.4;
-	c3 -= 0.3;
-	if (c1 < 0) { c1 = 255.0; }
-	if (c2 < 0) { c2 = 255.0; }
-	if (c3 < 0) { c3 = 255.0; }
-	cx1 -= 0.31;
-	cx2 -= 0.30;
-	cx3 -= 0.31;
-	if (cx1 <= -300)
-	{
-		cx1 = Global::Window::ScreenWidth+300;
-	}
-	if (cx2 <= -300)
-	{
-		cx2 = Global::Window::ScreenWidth+300;
-	}
-	if (cx3 <= -300)
-	{
-		cx3 = Global::Window::ScreenWidth+300;
-	}
-	cx4 -= 0.22;
-	cx5 -= 0.2;
-	cx6 -= 0.22;
-	if (cx4 <= -400)
-	{
-		cx4 = Global::Window::ScreenWidth+400;
-	}
-	if (cx5 <= -400)
-	{
-		cx5 = Global::Window::ScreenWidth + 400;
-	}
-	if (cx6 <= -400)
-	{
-		cx6 = Global::Window::ScreenWidth + 400;
-	}
-	cx7 -= 0.15;
-	cx8 -= 0.1;
-	cx9 -= 0.15;
-	if (cx7 <= -500)
-	{
-		cx7 = Global::Window::ScreenWidth+500;
-	}
-	if (cx8 <= -500)
-	{
-		cx8 = Global::Window::ScreenWidth + 500;
-	}
-	if (cx9 <= -500)
-	{
-		cx9 = Global::Window::ScreenWidth + 500;
-	}
+
 }
 
 void AboutScene::Update()
 {
-	
+	DWORD now = timeGetTime();
+	float dt = (now - about_lasttime) / 1000.0f;
+	about_lasttime = now;
+
+	// Color fade
+	c1 -= 240.0f * dt;
+	c2 -= 192.0f * dt;
+	c3 -= 144.0f * dt;
+	if (c1 < 0) { c1 = 255.0f; }
+	if (c2 < 0) { c2 = 255.0f; }
+	if (c3 < 0) { c3 = 255.0f; }
+
+	// Cloud layer 1 (near, fast)
+	cx1 -= 148.8f * dt;
+	cx2 -= 144.0f * dt;
+	cx3 -= 148.8f * dt;
+	if (cx1 <= -300) { cx1 = Global::Window::ScreenWidth + 300.0f; }
+	if (cx2 <= -300) { cx2 = Global::Window::ScreenWidth + 300.0f; }
+	if (cx3 <= -300) { cx3 = Global::Window::ScreenWidth + 300.0f; }
+
+	// Cloud layer 2 (mid)
+	cx4 -= 105.6f * dt;
+	cx5 -= 96.0f * dt;
+	cx6 -= 105.6f * dt;
+	if (cx4 <= -400) { cx4 = Global::Window::ScreenWidth + 400.0f; }
+	if (cx5 <= -400) { cx5 = Global::Window::ScreenWidth + 400.0f; }
+	if (cx6 <= -400) { cx6 = Global::Window::ScreenWidth + 400.0f; }
+
+	// Cloud layer 3 (far, slow)
+	cx7 -= 72.0f * dt;
+	cx8 -= 48.0f * dt;
+	cx9 -= 72.0f * dt;
+	if (cx7 <= -500) { cx7 = Global::Window::ScreenWidth + 500.0f; }
+	if (cx8 <= -500) { cx8 = Global::Window::ScreenWidth + 500.0f; }
+	if (cx9 <= -500) { cx9 = Global::Window::ScreenWidth + 500.0f; }
+
 	if (Key_Up(DIK_ESCAPE))
 	{
 		Game_ChangeScene(GAME_STATE::Home);
 	}
-
 }

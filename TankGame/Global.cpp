@@ -6,6 +6,8 @@ namespace Global {
         bool isActity = true;
 		int ScreenWidth;
 		int ScreenHeight;
+		float ScaleX = 1.0f;
+		float ScaleY = 1.0f;
 		int Now_GAME_STATE;
     }
     namespace Home {
