@@ -86,6 +86,19 @@ Comments are ~70% Chinese (Simplified), ~30% English. Resource filenames use Chi
 - `SoundSwicth` (should be SoundSwitch)
 - `Backgroud` (should be Background)
 - `Sound_Rescource` (should be Sound_Resource)
+- `Dirction` enum (should be Direction): values `up`, `right`, `below` (= down), `lift` (= left)
+
+### `Now_GAME_STATE` vs `GAME_STATE`
+
+`GAME_STATE` is the scene enum (Home, SinglePlayer, etc.). `Now_GAME_STATE` is an unrelated `int` flag: 0 = "Home screen, ESC quits", 1 = "in a sub-scene". Do not confuse them.
+
+### Circular Include
+
+`DirectX.h` ↔ `Global.h` have a circular include (safe via `#pragma once`). Do not add type dependencies between them.
+
+### Scene-local State Pattern
+
+Heavy scene state goes in a named namespace in the `.cpp` file (e.g., `namespace DMS` in `DesignMapScene.cpp`), not as class members.
 
 ### Memory Management
 
@@ -97,3 +110,26 @@ Manual `new`/`delete` throughout. DirectX COM objects released via `SAFE_RELEASE
 - Variables: mixed camelCase (`mousePoint`, `bulletlisthead`)
 - Globals/namespaces: PascalCase (`Global::Window`, `Resource::Texture`)
 - DirectX types use Win32 Hungarian notation (`LPDIRECT3DTEXTURE9`, `HWND`)
+
+## How-To Patterns
+
+### Add a new sound
+
+1. Place `.wav` file in `Resources/Sound/`
+2. Add `char* const` entry in `Resource::Sound_Rescource` (Resource.h)
+3. Add `extern CSound*` in Sound.h, define in Sound.cpp
+4. Add `LoadSound()` call in `Sound::Sound_Init()` (Sound.cpp)
+5. Play with `PlaySound()` or `LoopSound()`, stop with `StopSound()`
+
+### Add a new texture
+
+1. Place image in `Resources/Texture/`
+2. Add `char* const` entry in `Resource::Texture` (Resource.h)
+3. Load via `LoadTexture()` in the scene's `Init()`, release in `End()`
+4. Draw with `Sprite_Transform_Draw()` — use `D3DCOLOR_XRGB(r,g,b)` color key for transparency (default: black)
+
+### Add a new GUI element
+
+1. Create new header with a namespace (e.g., `namespace GUI::MyWidget`)
+2. Provide `Init()`, `Update()`, `Render()` functions
+3. `#include` it from `GUIs.h`
