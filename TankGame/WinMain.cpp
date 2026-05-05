@@ -22,7 +22,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         PostQuitMessage(0);
         break;
     case WM_PAINT:
-        //»ñÈ¡´°¿ÚÔÚÆÁÄ»µÄ×ø±ê
+        //ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         if (!Global::Window::FullScreen)
         {
             GetClientRect(hWnd, &rect);
@@ -33,7 +33,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         if (!Gameover)
             Game_Render(hWnd, device);
         break;
-        /*case WM_SIZE://²»»æÖÆ±êÌâÀ¸
+        /*case WM_SIZE://ï¿½ï¿½ï¿½ï¿½ï¿½Æ±ï¿½ï¿½ï¿½ï¿½ï¿½
             LONG_PTR Style = ::GetWindowLongPtr(hWnd, GWL_STYLE);
             Style = Style &~WS_CAPTION &~WS_SYSMENU &~WS_SIZEBOX;
             ::SetWindowLongPtr(hWnd, GWL_STYLE, Style);
@@ -73,28 +73,35 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
     //create a new window
-	long MetricsX = ::GetSystemMetrics(SM_CXSCREEN);//»ñÈ¡ÏÔÊ¾Æ÷·Ö±æÂÊÓÃÓÚÈÃ´°¿Ú¾ÓÖĞ
+	long MetricsX = ::GetSystemMetrics(SM_CXSCREEN);//ï¿½ï¿½È¡ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½Ö±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã´ï¿½ï¿½Ú¾ï¿½ï¿½ï¿½
 	long MetricsY = ::GetSystemMetrics(SM_CYSCREEN);
 	//create a new window
-	//¸ù¾İÓÃ»§ÆÁÄ»·Ö±æÂÊ·ÖÅäÓÎÏ·´°¿Ú´óĞ¡
+	//æ ¹æ®å±å¹•åˆ†è¾¨ç‡è®¡ç®—çª—å£å¤§å°ï¼Œä¿æŒæ¸¸æˆå®½é«˜æ¯”
 	const float GameY_Screen_rate = 0.8888889;
 	const float GameY_GameX_rate = 0.9375;
 
 	int GameScreenHeight = MetricsY*GameY_Screen_rate;
 	int GameScreenWidth  = GameScreenHeight / GameY_GameX_rate;
-	Global::Window::ScreenHeight = GameScreenHeight;
-	Global::Window::ScreenWidth = GameScreenWidth;
-	Global::Window::ScaleX = (float)Global::Window::ScreenWidth / Global::Window::BaseWidth;
-	Global::Window::ScaleY = (float)Global::Window::ScreenHeight / Global::Window::BaseHeight;
+	//D3Dåç¼“å†²åŒºå›ºå®šä¸ºåŸºå‡†åˆ†è¾¨ç‡ï¼Œç”±D3Dè‡ªåŠ¨æ‹‰ä¼¸åˆ°çª—å£å®¢æˆ·åŒº
+	Global::Window::ScreenWidth = Global::Window::BaseWidth;
+	Global::Window::ScreenHeight = Global::Window::BaseHeight;
+	Global::Window::ScaleX = 1.0f;
+	Global::Window::ScaleY = 1.0f;
+
+	//è®¡ç®—åŒ…å«æ ‡é¢˜æ å’Œè¾¹æ¡†çš„çª—å£å°ºå¯¸ï¼Œä½¿å®¢æˆ·åŒºç­‰äºæœŸæœ›å¤§å°
+	RECT windowRect = { 0, 0, GameScreenWidth, GameScreenHeight };
+	AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
+	int windowWidth = windowRect.right - windowRect.left;
+	int windowHeight = windowRect.bottom - windowRect.top;
 
     window = CreateWindow(
         Global::Window::GameTitle.c_str(),              //window class
         Global::Window::GameTitle.c_str(),              //title bar
         WS_OVERLAPPEDWINDOW,   //window style
-		MetricsX / 2 - GameScreenWidth / 2,         //x position of window
-		MetricsY / 2 - GameScreenHeight / 2,         //y position of window
-		GameScreenWidth,                   //width of the window
-		GameScreenHeight,                   //height of the window
+		MetricsX / 2 - windowWidth / 2,         //x position of window
+		MetricsY / 2 - windowHeight / 2,         //y position of window
+		windowWidth,                   //width of the window
+		windowHeight,                   //height of the window
         NULL,                  //parent window
         NULL,                  //menu
         hInstance,             //application instance
@@ -126,32 +133,32 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     //initialize the game
     if (!Game_Init(window)) {
-        ShowMessage("ÓÎÏ·³õÊ¼»¯Ê§°Ü");
+        ShowMessage("ï¿½ï¿½Ï·ï¿½ï¿½Ê¼ï¿½ï¿½Ê§ï¿½ï¿½");
         return -1;
     }
 
     while (!Gameover)
     {
-        //Èç¹ûÓĞWindowsÏûÏ¢ÔòÓÅÏÈ´¦Àí
+        //ï¿½ï¿½ï¿½ï¿½ï¿½Windowsï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½È´ï¿½ï¿½ï¿½
         if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
         else {
-            //Èç¹û´°¿ÚÃ»ÓĞ¼¤»î£¬²¢ÇÒÒ²²»ÔÊĞíºóÌ¨ÔËĞĞÓÎÏ·Ê±£¬¾ÍÌø¹ıËùÓĞÂß¼­´¦Àí
+            //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã»ï¿½Ğ¼ï¿½ï¿½î£¬ï¿½ï¿½ï¿½ï¿½Ò²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï·Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½ï¿½
             if (Global::Window::isActity == false) {
                 if (Global::Window::EnableBackgroundRunning == false)
                     continue;
             }
 
-            //»ñÈ¡µ±Ç°Ê±¼ä£¬¾«È·µ½ºÁÃë
+            //ï¿½ï¿½È¡ï¿½ï¿½Ç°Ê±ï¿½ä£¬ï¿½ï¿½È·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             currentTime = timeGetTime();
 
-            //-------¼ÆËãÖ¡ÂÊ--------
-            //Ã¿Ö´ĞĞÒ»´ÎÑ­»·currentCount×Ô¼Ó1
+            //-------ï¿½ï¿½ï¿½ï¿½Ö¡ï¿½ï¿½--------
+            //Ã¿Ö´ï¿½ï¿½Ò»ï¿½ï¿½Ñ­ï¿½ï¿½currentCountï¿½Ô¼ï¿½1
             currentCount++;
-            //Ïà±ÈÉÏÒ»´ÎÑ­»·¹ıÁË1ÃëÖÓºó£¬currentCount¼´Îªµ±Ç°µÄFPSÖ¡ÂÊ
+            //ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Ñ­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½ï¿½Óºï¿½currentCountï¿½ï¿½Îªï¿½ï¿½Ç°ï¿½ï¿½FPSÖ¡ï¿½ï¿½
             if (currentTime > lastCurrentTime + 1000)
             {
                 Global::Debug::currentFPS = currentCount;
@@ -160,29 +167,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
             //-----------------------
 
-            //Éè¶¨Âß¼­Ë¢ĞÂËÙ¶ÈÎªÖ¸¶¨µÄÖ¡ÂÊ£¬µ±ÓëÉÏÒ»´ÎË¢ĞÂµÄÊ±¼ä¼ä¸ô³¬¹ıÁËÖ¡ÂÊµÄµ¹ÊıÊ±£¬Ö´ĞĞUpdate
+            //ï¿½è¶¨ï¿½ß¼ï¿½Ë¢ï¿½ï¿½ï¿½Ù¶ï¿½ÎªÖ¸ï¿½ï¿½ï¿½ï¿½Ö¡ï¿½Ê£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Ë¢ï¿½Âµï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¡ï¿½ÊµÄµï¿½ï¿½ï¿½Ê±ï¿½ï¿½Ö´ï¿½ï¿½Update
             if (currentTime > refreshTime + 1000.0f / Global::Window::targetFps)
             {
                 refreshTime = currentTime;
-                Game_Update(window);//DirectXÑ­»·
+                Game_Update(window);//DirectXÑ­ï¿½ï¿½
             }
 
-            //ÆäÓàÊ±¼äÈ«ÓÃÀ´äÖÈ¾
-            Game_Render(window, device);//DirectXäÖÈ¾
+            //ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½È«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¾
+            Game_Render(window, device);//DirectXï¿½ï¿½È¾
         }
     }
-    //ÊÍ·Å×ÊÔ´
+    //ï¿½Í·ï¿½ï¿½ï¿½Ô´
     Game_Free(window, device);
 
     return msg.wParam;
 }
 
-//½áÊøÓÎÏ·
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï·
 void EndApplication()
 {
     PostMessage(window, WM_DESTROY, 0, 0);
 }
-//µ¯³öÒ»¸öÒÔÓÎÏ·±êÌâÎª±êÌâ£¬´øÓĞÒ»¸öÈ·¶¨°´Å¥µÄÏûÏ¢¿ò
+//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½â£¬ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½È·ï¿½ï¿½ï¿½ï¿½Å¥ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½
 void ShowMessage(string text)
 {
     MessageBox(window, text.c_str(), Global::Window::GameTitle.c_str(), MB_OK);
