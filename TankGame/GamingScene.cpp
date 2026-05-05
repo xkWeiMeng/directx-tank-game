@@ -3153,6 +3153,9 @@ void MapPiece::Draw()
 		Sprite_Transform_Draw(Tile, (X+1)*64+(rp->rect->left-32)*2, (Y + 1) * 64+rp->rect->top*2,
 			rp->rect, 0, 1, 0, 2, 2,D3DCOLOR_XRGB(255, 255, 255));
 		else if(rp->rect->left<96)
+			Sprite_Transform_Draw(Tile, X * 64 + rp->rect->left*2-64, (Y + 1) * 64 + rp->rect->top,
+				rp->rect, 0, 1, 0, 2, 2, D3DCOLOR_XRGB(255, 255, 255));
+		else if (rp->rect->left<128)
 		{
 			// 水面动画：在第4帧(x=96)和第5帧(x=128)之间交替
 			RECT waterRect;
@@ -3164,9 +3167,6 @@ void MapPiece::Draw()
 			Sprite_Transform_Draw(Tile, (X + 1) * 64, (Y + 1) * 64,
 				&waterRect, 0, 1, 0, 2, 2, D3DCOLOR_XRGB(255, 255, 255));
 		}
-		else if (rp->rect->left<128)
-			Sprite_Transform_Draw(Tile, (X + 1) * 64 + (rp->rect->left-96)*2, (Y + 1) * 64 + rp->rect->top*2,
-				rp->rect, 0, 1, 0, 2, 2, D3DCOLOR_XRGB(255, 255, 255));
 		else if (rp->rect->left<160)
 			Sprite_Transform_Draw(Tile, (X + 1) * 64 + (rp->rect->left-128)*2, (Y + 1) * 64 + rp->rect->top*2,
 				rp->rect, 0, 1, 0, 2, 2, D3DCOLOR_XRGB(255, 255, 255));
