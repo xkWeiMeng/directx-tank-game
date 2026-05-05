@@ -66,11 +66,14 @@ public:
 	int PowerLevel;
 	bool Alive;//存在标志
 	bool FlashFlag;//闪光标志
+	int InvincibleEndTime;//无敌结束时间（GetTickCount）
 	bool Shoot(int,int);
 	bool Draw();
 	bool Logic(int);
 	bool GetHurt(int power);
 	void Born();
+	void ApplyGradeStats();
+	void LevelUp();
 };
 class Player2 :public Player
 {
@@ -91,6 +94,7 @@ public:
 	bool CrashingFlag;//碰撞标志
 	unsigned long ID;
 	int Time;
+	bool IsFlashEnemy;//闪烁敌人标志
 };
 
 
@@ -159,4 +163,22 @@ struct  MapPieceList
 };
 struct MapPieceListHead {
 	MapPieceList*next;
+};
+
+//奖励物品
+class AwardItem {
+public:
+	float x, y;
+	int Type; //奖励类型：4=星星(升级)
+	unsigned long ID;
+	int CreateTime; //创建时间
+	AwardItem(int x, int y, int type);
+	bool Draw();
+};
+struct AwardItemList {
+	AwardItem*award;
+	AwardItemList*last, *next;
+};
+struct AwardItemListHead {
+	AwardItemList*next;
 };
