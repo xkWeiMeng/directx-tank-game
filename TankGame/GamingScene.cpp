@@ -1014,8 +1014,11 @@ void GS::DrawMap()
 				case 26:Sprite_Transform_Draw(Tile, (i + 1) * 64, (j + 1) * 64,
 					32, 32, 1, 7, 0, 2, D3DCOLOR_XRGB(255, 255, 255)); break;
 
-				case 27:Sprite_Transform_Draw(Tile, (i + 1) * 64, (j + 1) * 64,
-					32, 32, 2, 7, 0, 2, D3DCOLOR_XRGB(255, 255, 255)); break;
+				case 27: {
+					int waterFrame = (GetTickCount() / 500) % 2 == 0 ? 3 : 4;
+					Sprite_Transform_Draw(Tile, (i + 1) * 64, (j + 1) * 64,
+					32, 32, waterFrame, 7, 0, 2, D3DCOLOR_XRGB(255, 255, 255)); break;
+				}
 
 				case 28:Sprite_Transform_Draw(Tile, (i + 1) * 64, (j + 1) * 64,
 					32, 32, 3, 7, 0, 2, D3DCOLOR_XRGB(255, 255, 255)); break;
