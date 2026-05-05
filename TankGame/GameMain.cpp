@@ -35,8 +35,6 @@ bool Game_Init(HWND window)
 	//
     GUI::Cursor::Init();
 	//
-	ReadPlayerSettingInHD();
-	//
 	Global::Window::Now_GAME_STATE = 0;
 	//声音开关
 	//Global::Sound::SoundSwicth = true;
@@ -55,6 +53,8 @@ bool Game_Init(HWND window)
 		Global::PlayerControl::Player2[3] = 0x44;
 		Global::PlayerControl::Player2[4] = 0x4A;
 	}
+	//
+	ReadPlayerSettingInHD();
     //切换到欢迎场景
     Game_ChangeScene(GAME_STATE::Home);
 

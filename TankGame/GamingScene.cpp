@@ -332,6 +332,30 @@ void GamingScene::End()
 	//重置地图变量
 	SGOy = 960;
 	GameOverFlag = false;
+	EnemyNumber = 30;
+	HaveBornEnemyNumber = 0;
+	BornPlayer1MapPiece.clear();
+	BornPlayer2MapPiece.clear();
+	BornEnemyMapPiece.clear();
+	SAFE_RELEASE(GrayRect);
+	SAFE_RELEASE(BlackRect);
+	SAFE_RELEASE(Flag);
+	SAFE_RELEASE(Something);
+	SAFE_RELEASE(Tile);
+	SAFE_RELEASE(Player_1);
+	SAFE_RELEASE(Player_2);
+	SAFE_RELEASE(Bullet_TXTTURE);
+	SAFE_RELEASE(Enemy_TXTTURE);
+	SAFE_RELEASE(Award);
+	SAFE_RELEASE(Boom1);
+	SAFE_RELEASE(Boom2);
+	SAFE_RELEASE(GameOver);
+	SAFE_RELEASE(Shield);
+	SAFE_RELEASE(Hole);
+	SAFE_RELEASE(Number);
+	for (int i = 0; i < 9; i++) SAFE_RELEASE(Flicker[i]);
+	if (Sound::Moving->IsSoundPlaying()) Sound::Moving->Stop();
+	if (Sound::BGM->IsSoundPlaying()) Sound::BGM->Stop();
 }
 //游戏渲染
 void GamingScene::Render()
@@ -440,22 +464,22 @@ void GamingScene::Update()
 		//玩家一
 		if (player.Alive)
 		{
-			if (KEY_DOWN(VK_UP) && !KEY_DOWN(VK_RIGHT) && !KEY_DOWN(VK_LEFT))
+			if (KEY_DOWN(Global::PlayerControl::Player1[0]) && !KEY_DOWN(Global::PlayerControl::Player1[3]) && !KEY_DOWN(Global::PlayerControl::Player1[2]))
 			{
 				player.Logic(Dirction::up);
 				//up
 			}
-			if (KEY_DOWN(VK_DOWN) && !KEY_DOWN(VK_RIGHT) && !KEY_DOWN(VK_LEFT))
+			if (KEY_DOWN(Global::PlayerControl::Player1[1]) && !KEY_DOWN(Global::PlayerControl::Player1[3]) && !KEY_DOWN(Global::PlayerControl::Player1[2]))
 			{
 				player.Logic(Dirction::below);
 				//blow
 			}
-			if (KEY_DOWN(VK_LEFT))
+			if (KEY_DOWN(Global::PlayerControl::Player1[2]))
 			{
 				player.Logic(Dirction::lift);
 				//left
 			}
-			if (KEY_DOWN(VK_RIGHT))
+			if (KEY_DOWN(Global::PlayerControl::Player1[3]))
 			{
 				player.Logic(Dirction::right);
 				//right
@@ -464,7 +488,7 @@ void GamingScene::Update()
 			static int ShootTime = 10;
 			if (ShowTime)
 				ShootTime++;
-			if (KEY_DOWN(0x58) || KEY_DOWN(VK_NUMPAD0))
+			if (KEY_DOWN(Global::PlayerControl::Player1[4]) || KEY_DOWN(VK_NUMPAD0))
 			{
 
 				if (ShootTime > 10 / player.Attack_Speed)
@@ -475,28 +499,40 @@ void GamingScene::Update()
 
 			}
 		}
+		//Player1 movement sound
+		if (Global::Sound::SoundSwicth && player.Alive)
+		{
+			bool isMoving = KEY_DOWN(Global::PlayerControl::Player1[0]) || KEY_DOWN(Global::PlayerControl::Player1[1]) || KEY_DOWN(Global::PlayerControl::Player1[2]) || KEY_DOWN(Global::PlayerControl::Player1[3]);
+			if (isMoving && !Sound::Moving->IsSoundPlaying())
+				Sound::Moving->Play(0, DSBPLAY_LOOPING);
+			else if (!isMoving && Sound::Moving->IsSoundPlaying())
+			{
+				Sound::Moving->Stop();
+				Sound::Stop->Play();
+			}
+		}
 		//玩家二
 		static int ShootTime2 = 10;
 		if (player2.Alive)
 		{
 			if (IsDoublePlayer)
 			{
-				if (KEY_DOWN(0x57) && !KEY_DOWN(0x44) && !KEY_DOWN(0x41))
+				if (KEY_DOWN(Global::PlayerControl::Player2[0]) && !KEY_DOWN(Global::PlayerControl::Player2[3]) && !KEY_DOWN(Global::PlayerControl::Player2[2]))
 				{
 					player2.Logic(Dirction::up);
 					//up
 				}
-				if (KEY_DOWN(0x53) && !KEY_DOWN(0x44) && !KEY_DOWN(0x41))
+				if (KEY_DOWN(Global::PlayerControl::Player2[1]) && !KEY_DOWN(Global::PlayerControl::Player2[3]) && !KEY_DOWN(Global::PlayerControl::Player2[2]))
 				{
 					player2.Logic(Dirction::below);
 					//blow
 				}
-				if (KEY_DOWN(0x41))
+				if (KEY_DOWN(Global::PlayerControl::Player2[2]))
 				{
 					player2.Logic(Dirction::lift);
 					//left
 				}
-				if (KEY_DOWN(0x44))
+				if (KEY_DOWN(Global::PlayerControl::Player2[3]))
 				{
 					player2.Logic(Dirction::right);
 					//right
@@ -504,7 +540,7 @@ void GamingScene::Update()
 				//玩家射击
 				if (ShowTime)
 					ShootTime2++;
-				if (KEY_DOWN(0x4A))
+				if (KEY_DOWN(Global::PlayerControl::Player2[4]))
 				{
 					if (ShootTime2 > 10 / player2.Attack_Speed)
 					{
@@ -883,6 +919,15 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 		}
 		if (crashflag1 || crashflag2)
 			return 1;
+		//妫�娴嬪瓙寮规槸鍚﹀懡涓棗甯滐紙鍩哄湴锛?
+		{
+			RECT FlagRect = { 926, 704, 990, 768 };
+			if (IntersectRect(&Rect, &FlagRect, &BulletRect))
+			{
+				GameOverFlag = true;
+				return 1;
+			}
+		}
 		for (int i = 0; i < 4; i++)
 		{
 			switch (i)
@@ -907,6 +952,7 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 				break;
 			}
 		}
+		return 0;
 	}
 //游戏地图绘画函数       
 void GS::DrawMap()
@@ -1646,7 +1692,7 @@ GameScene的方法到此结束
 //敌人AI
 int* idiot(int state, bool cflag)
 {
-	int a[2];
+	static int a[2];
 	if (cflag)
 	{
 		if ((rand() % 5) == 1)
@@ -2061,13 +2107,13 @@ bool Player::Draw()
 	if (ChangeFrame) {
 		Sprite_Transform_Draw(Player_1, player.x, player.y, player.width, player.height,
 			Dir * 8 + Grade * 2, player.columns, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-		if (KEY_DOWN(VK_LEFT) || KEY_DOWN(VK_RIGHT) || KEY_DOWN(VK_UP) || KEY_DOWN(VK_DOWN))
+		if (KEY_DOWN(Global::PlayerControl::Player1[2]) || KEY_DOWN(Global::PlayerControl::Player1[3]) || KEY_DOWN(Global::PlayerControl::Player1[0]) || KEY_DOWN(Global::PlayerControl::Player1[1]))
 			ChangeFrame = !ChangeFrame;
 	}
 	else {
 		Sprite_Transform_Draw(Player_1, player.x, player.y, player.width, player.height,
 			Dir * 8 + Grade * 2 + 1, player.columns, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-		if (KEY_DOWN(VK_LEFT) || KEY_DOWN(VK_RIGHT) || KEY_DOWN(VK_UP) || KEY_DOWN(VK_DOWN))
+		if (KEY_DOWN(Global::PlayerControl::Player1[2]) || KEY_DOWN(Global::PlayerControl::Player1[3]) || KEY_DOWN(Global::PlayerControl::Player1[0]) || KEY_DOWN(Global::PlayerControl::Player1[1]))
 			ChangeFrame = !ChangeFrame;
 	}
 	if (FlashFlag)
@@ -2295,9 +2341,13 @@ bool Player::GetHurt(int power)
 {
 	Health_Point--;
 	if (Health_Point == 0)
+	{
+		if (Global::Sound::SoundSwicth)
+			Sound::PlayerBoom->Play();
 		return false;
+	}
 	else
-		true;
+		return true;
 }
 //玩家重新生成方法
 void Player::Born()
@@ -2312,7 +2362,8 @@ void Player::Born()
 	}
 	else
 	{
-
+		player.x = 64 * 6;
+		player.y = 64 * 13;
 	}
 }
 
@@ -2350,13 +2401,13 @@ bool Player2::Draw()
 	if (ChangeFrame) {
 		Sprite_Transform_Draw(Player_2, player.x, player.y, player.width, player.height,
 			Dir * 8 + Grade * 2, player.columns, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-		if (KEY_DOWN(0x41) || KEY_DOWN(0x44) || KEY_DOWN(0x57) || KEY_DOWN(0x53))
+		if (KEY_DOWN(Global::PlayerControl::Player2[2]) || KEY_DOWN(Global::PlayerControl::Player2[3]) || KEY_DOWN(Global::PlayerControl::Player2[0]) || KEY_DOWN(Global::PlayerControl::Player2[1]))
 			ChangeFrame = !ChangeFrame;
 	}
 	else {
 		Sprite_Transform_Draw(Player_2, player.x, player.y, player.width, player.height,
 			Dir * 8 + Grade * 2 + 1, player.columns, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-		if (KEY_DOWN(0x41) || KEY_DOWN(0x44) || KEY_DOWN(0x57) || KEY_DOWN(0x53))
+		if (KEY_DOWN(Global::PlayerControl::Player2[2]) || KEY_DOWN(Global::PlayerControl::Player2[3]) || KEY_DOWN(Global::PlayerControl::Player2[0]) || KEY_DOWN(Global::PlayerControl::Player2[1]))
 			ChangeFrame = !ChangeFrame;
 	}
 	if (FlashFlag)

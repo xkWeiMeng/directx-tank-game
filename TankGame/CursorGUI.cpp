@@ -34,6 +34,7 @@ namespace GUI {
             Cursor.x = Cursor.y = 0;
             Cursor.width = Info.Width;
             Cursor.height = Info.Height;
+            return true;
         }
     }
 }

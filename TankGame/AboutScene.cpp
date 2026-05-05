@@ -25,6 +25,11 @@ void AboutScene::End()
 {
 	Sound::BGM->Stop();
     background->Release();
+	SAFE_RELEASE(Could1);
+	SAFE_RELEASE(Could2);
+	SAFE_RELEASE(Could3);
+	SAFE_RELEASE(Mountain);
+	SAFE_RELEASE(Feiting);
 }
 
 /*

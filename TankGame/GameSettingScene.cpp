@@ -50,6 +50,7 @@ void GameSettingScene::End()
 {
 	font->Release();
 	BlackRect->Release();
+	SAFE_RELEASE(GameSettingPNG);
 }
 
 void GameSettingScene::Update()

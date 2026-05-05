@@ -78,11 +78,13 @@ bool DesignMapScene::Init()
 
 void DesignMapScene::End()
 {
-	Player_2->Release();
-	Player_1->Release();
-	Enemy_TXTTURE->Release();
-	BlackRect->Release();
-	Tile->Release();
+	SAFE_RELEASE(Player_2);
+	SAFE_RELEASE(Player_1);
+	SAFE_RELEASE(Enemy_TXTTURE);
+	SAFE_RELEASE(BlackRect);
+	SAFE_RELEASE(Tile);
+	SAFE_RELEASE(font);
+	SAFE_RELEASE(NumFont);
 	for (int i = 0; i < 13; i++)
 		for (int j = 0; j < 13; j++)
 			Map[j][i] = 0;

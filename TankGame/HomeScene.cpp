@@ -75,8 +75,10 @@ void HomeScene::Update()
         switch (choose)
         {
         case 0:
-        case 1://双人游戏和单人游戏的接口一样
-			Game_ChangeScene(GAME_STATE::SinglePlayer);
+				Game_ChangeScene(GAME_STATE::SinglePlayer);
+            break;
+		case 1:
+				Game_ChangeScene(GAME_STATE::DoublePlayer);
             break;
 		case 2:
 			Game_ChangeScene(GAME_STATE::DesignMap);
