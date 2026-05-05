@@ -2,7 +2,7 @@
 
 ## Build
 
-- **IDE**: Visual Studio 2017+ (v141 toolset, Windows SDK 10.0.15063.0)
+- **IDE**: Visual Studio 2022 (v143 toolset) or 2017+ (v141 toolset, Windows SDK 10.0.15063.0)
 - **Solution**: `TankGame.sln` → single project `TankGame/TankGame.vcxproj`
 - **Configurations**: Debug/Release × Win32/x64
 - **DirectX SDK**: June 2010 (`C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)`)
@@ -12,6 +12,11 @@
 Build from Visual Studio or:
 ```
 msbuild TankGame.sln /p:Configuration=Debug /p:Platform=Win32
+```
+
+If using VS 2022 with v143 toolset (vcxproj may reference v145 which doesn't exist):
+```
+msbuild TankGame.sln /p:Configuration=Debug /p:Platform=x64 /p:PlatformToolset=v143
 ```
 
 ## Architecture
@@ -52,15 +57,82 @@ DirectX 9.0c with D3DXSprite for 2D rendering. Key functions:
 - `MakeFont()` / `FontPrint()` — text rendering
 - `Collision()` (AABB) / `CollisionD()` (distance-based) — collision detection
 
+`Sprite_Transform_Draw(texture, x, y, width, height, frame, columns, rotation, scaling, color)` — the `color` parameter is a tint filter (white = no tint), not a color key. Color keys are set at `LoadTexture()` time.
+
+Key sprite layouts:
+- **Player** (`玩家一.bmp`): 224×112, 8 columns, 28×28 per frame. Frame = `Dir * 8 + Grade * 2 + (0|1)` for walk animation
+- **Enemy** (`敌人.bmp`): same layout as Player
+- **Award** (`奖励.bmp`): 180×28, 6 columns, 30×28 per frame
+- **Tile** (`砖.bmp`): 7 columns, 32×32 (see Tile Texture Layout)
+- **Shield** (`盾牌.bmp`): 32×64, 2 frames of 32×32 for invincibility animation
+
 Render order: scene content → debug info → cursor (topmost).
+
+### Window / 4K Display
+
+`ScreenWidth`/`ScreenHeight` are always set to `BaseWidth`/`BaseHeight` (1024×960). The D3D backbuffer uses this fixed resolution and stretches to fill the window client area. Window physical size is calculated from screen metrics. This ensures correct rendering on all DPI settings.
 
 ### Game Objects (GamingScene.cpp)
 
-Game objects (`Player`, `Enemy`, `Bullet`, `BoomFire`, `MapPiece`) use **manual linked lists** — not STL containers. Each list has a `*ListHead` struct. Dead objects go into `UselessObjHead` for batch cleanup.
+Game objects (`Player`, `Enemy`, `Bullet`, `BoomFire`, `MapPiece`, `AwardItem`) use **manual linked lists** — not STL containers. Each list has a `*ListHead` struct. Dead objects go into `UselessObjHead` for batch cleanup.
+
+Heavy game state lives in the `GS` namespace inside `GamingScene.cpp` (not as class members). Key state variables:
+- `FreezeEndTime` / `FortifyEndTime` — power-up timers (GetTickCount-based)
+- `FlagGameX` / `FlagGameY` — base (eagle) position in game area, grid (6,12) = pixel (448, 832)
+- `BaseDestroyed` — flag for destroyed eagle rendering
+- `NowLevel` — current stage number
+
+### Player Grade System
+
+Players have a `Grade` (0–3) that affects stats (speed, bullet speed, power level). Grade 0 is the starting level. Picking up a star award calls `LevelUp()` → `ApplyGradeStats()`. At Grade 3, bullets can destroy steel walls (`PowerLevel >= 3`).
+
+### Power-Up System (AwardItem)
+
+Six award types (frames in `奖励.bmp`, 6 columns of 30×28):
+
+| Frame | Type | Effect |
+|-------|------|--------|
+| 0 | Helmet | Invincibility for 10 seconds (Shield texture overlay) |
+| 1 | Timer | Freeze all enemies for 10 seconds |
+| 2 | Shovel | Fortify base for 20 seconds (base becomes invulnerable) |
+| 3 | Grenade | Destroy all enemies on screen |
+| 4 | Star | Level up player (Grade+1, max 3) |
+| 5 | Extra Life | +1 life |
+
+Awards spawn when a "flash enemy" (`IsFlashEnemy = true`) is destroyed. Invincibility uses `InvincibleEndTime` (GetTickCount-based) checked in `Player::GetHurt()`.
 
 ### Map System
 
-Maps are 13×13 grids stored as binary `.map` files (169 bytes) in `Map/`. Tile values encode walls, spawn points, etc. The `DesignMapScene` provides a visual editor. Maps load via `ReadMapInHD()`.
+Maps are 13×13 grids stored as binary `.map` files (169 bytes) in `Map/`. The `DesignMapScene` provides a visual editor. Maps load via `ReadMapInHD()`.
+
+Key map values: 0=empty, 1-13=brick configs, 14-26=steel configs, 27=grass, 28=water, 29=ice, 31=P1 spawn, 32=P2 spawn, 33=enemy spawn.
+
+The base (eagle) is NOT stored in map files — it's rendered separately at a fixed position using the Tile texture.
+
+### Tile Texture Layout (砖.bmp)
+
+The tile spritesheet has **7 columns of 32×32** tiles. Rendering uses `Sprite_Transform_Draw()` with frame index or `MapPiece::Draw()` with source RECTs.
+
+| Index (0-based) | X offset | Content |
+|-----------------|----------|---------|
+| 0 | 0 | Brick |
+| 1 | 32 | Steel |
+| 2 | 64 | Grass/Trees |
+| 3 | 96 | Water frame 1 |
+| 4 | 128 | Water frame 2 |
+| 5 | 160 | Eagle (normal) |
+| 6 | 192 | Eagle (destroyed) |
+
+Water tiles animate by alternating frames 3 and 4 in `MapPiece::Draw()`. Brick sub-tiles use 16×16 pieces (14-column addressing at half-tile resolution).
+
+### MapPiece Rendering
+
+Tiles are rendered via `MapPiece::Draw()` (the linked list walk in `Render()`), **not** via `DrawMap()` which is commented out. `MapPiece::Draw()` routes rendering by `rect->left` ranges:
+- `<32`: brick | `<64`: steel | `<96`: grass | `<128`: water (animated) | `<160`: ice | `<192`: eagle | `>=192`: destroyed eagle
+
+### Wall Collision (BeingCrash)
+
+`BeingCrash()` determines wall type by `rect->left`: `<32` = brick (always destroyable), `32-63` = steel (only destroyable if `powerLevel >= 3`), `>=64` = non-destructible (grass, water, ice). The `powerLevel` parameter flows from `Bullet::Logic()` → `Crash()` → `BeingCrash()`.
 
 ### Audio (DirectSound.h/cpp, Sound.h/cpp)
 
@@ -133,3 +205,17 @@ Manual `new`/`delete` throughout. DirectX COM objects released via `SAFE_RELEASE
 1. Create new header with a namespace (e.g., `namespace GUI::MyWidget`)
 2. Provide `Init()`, `Update()`, `Render()` functions
 3. `#include` it from `GUIs.h`
+
+### Add a new power-up
+
+1. Add a frame to `奖励.bmp` (append column) or reuse an existing type index
+2. Add a `case` in `CheckAwardCollision()` in `GamingScene.cpp` to define the effect
+3. If the effect is time-based, add an `int XxxEndTime = 0` variable in the `GS` namespace
+4. Check the timer in the relevant game loop section (`Update()`, `Crash()`, etc.)
+5. Reset the timer in `NewStage()` and `RestartThisStage()`
+
+### Add a new scene
+
+1. Inherit `Scene`, implement `Init()`, `End()`, `Update()`, `Render()`
+2. Add a `GAME_STATE` enum value in `Global.h`
+3. Add a `case` in `Game_ChangeScene()` in `GameMain.cpp`

@@ -5,7 +5,8 @@
 ## 快速参考
 
 - **构建**: `msbuild TankGame.sln /p:Configuration=Debug /p:Platform=Win32` → `Tank.exe`
-- **IDE**: Visual Studio 2017+ (v141, Windows SDK 10.0.15063.0)
+- **VS 2022**: 需加 `/p:PlatformToolset=v143`（vcxproj 中的 v145 不存在）
+- **IDE**: Visual Studio 2017+ (v141) 或 2022 (v143, Windows SDK 10.0.15063.0)
 - **字符集**: MultiByte（**不要**切换到 Unicode）
 
 ## 文档索引
