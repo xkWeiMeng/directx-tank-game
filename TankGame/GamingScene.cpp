@@ -34,6 +34,10 @@ namespace GS {
 	int EnemyNumber = 30;
 	int FreezeEndTime = 0;   //定时器：敌人冻结结束时间
 	int FortifyEndTime = 0;  //铲子：基地加固结束时间
+	//基地（老鹰）在游戏区域内的位置，网格(6,12)
+	int FlagGameX = (6 + 1) * 64; // 448
+	int FlagGameY = (12 + 1) * 64; // 832
+	bool BaseDestroyed = false; //基地是否被击毁
 	/*����*/
 	Player player;
 	Player2 player2;
@@ -41,7 +45,7 @@ namespace GS {
 	void ShowGameOver();
 
 	/*���ߺ���*/
-	int  Crash(int iswho, int x, int y, int speed, int dir, int shooter, unsigned long id, int);
+	int  Crash(int iswho, int x, int y, int speed, int dir, int shooter, unsigned long id, int, int powerLevel);
 	void DrawMap();
 	void CreateMapPiece();
 	bool ReadMapInHD(string filename);
@@ -343,6 +347,7 @@ void GamingScene::End()
 	//���õ�ͼ����
 	SGOy = 960;
 	GameOverFlag = false;
+	BaseDestroyed = false;
 	EnemyNumber = 30;
 	HaveBornEnemyNumber = 0;
 	BornPlayer1MapPiece.clear();
@@ -387,12 +392,16 @@ void GamingScene::Render()
 	DrawNet();//��������ʽ��ɾ��
 			  /*��Ϸ����*/
 	spriteObj->Begin(D3DXSPRITE_ALPHABLEND);
+	//侧栏旗帜图标（UI装饰）
 	Sprite_Transform_Draw(Flag, 926, 704, 32, 32, 0, 1, 0, 2.0, D3DCOLOR_XRGB(255, 255, 255));
+	//游戏区域内基地（老鹰）— 使用砖.bmp第6帧(正常)/第7帧(击毁)
+	int eagleFrame = BaseDestroyed ? 6 : 5;
+	Sprite_Transform_Draw(Tile, FlagGameX, FlagGameY, 32, 32, eagleFrame, 7, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
 	//基地加固Shield效果
-	if ((int)GetTickCount() < FortifyEndTime)
+	if (!BaseDestroyed && (int)GetTickCount() < FortifyEndTime)
 	{
 		int shieldFrame = (GetTickCount() / 100) % 2;
-		Sprite_Transform_Draw(Shield, 926, 704, 32, 32, shieldFrame, 1, 0, 2.0f, D3DCOLOR_XRGB(255, 255, 255));
+		Sprite_Transform_Draw(Shield, FlagGameX, FlagGameY, 32, 32, shieldFrame, 1, 0, 2.0f, D3DCOLOR_XRGB(255, 255, 255));
 	}
 	//���һ����Ϣ
 	Sprite_Transform_Draw(Something, 928, 512, 14, 14, 2, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
@@ -691,6 +700,7 @@ void GamingScene::Update()
 		{
 			RestartThisStage();
 			GameOverFlag = false;
+			BaseDestroyed = false;
 		}
 	}
 	ShowTime = false;
@@ -724,7 +734,7 @@ void GS::ShowGameOver()
 	}
 //ר�ŷ�����bullet::logic����ײ��⺯��
 int  GS::Crash(int iswho, int x, int y, int speed, int dir, 
-	           int shooter, unsigned long id, int movedmixel) {
+	           int shooter, unsigned long id, int movedmixel, int powerLevel) {
 		//��ͼ�߽�
 		static  RECT MapEdgeTop = { 0,0,1024,64 },
 			MapEdgeBelow = { 0,896,1024,960 },
@@ -902,7 +912,7 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 			{
 				if (X1 - 1 == mp->mappiece->X)
 					if (Y1 - 1 == mp->mappiece->Y)
-						crashflag1 = mp->mappiece->BeingCrash(0, BulletRect, dir, x, y);
+						crashflag1 = mp->mappiece->BeingCrash(0, BulletRect, dir, x, y, powerLevel);
 				mp = mp->next;
 			}
 		}
@@ -912,7 +922,7 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 			{
 				if (X1 - 1 == mp->mappiece->X)
 					if (Y1 - 1 == mp->mappiece->Y)
-						crashflag1 = mp->mappiece->BeingCrash(0, BulletRect, dir, x, y);
+						crashflag1 = mp->mappiece->BeingCrash(0, BulletRect, dir, x, y, powerLevel);
 				mp = mp->next;
 			}
 			mp = mappiecelisthead.next;
@@ -920,7 +930,7 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 			{
 				if (X2 - 1 == mp->mappiece->X)
 					if (Y2 - 1 == mp->mappiece->Y)
-						crashflag2 = mp->mappiece->BeingCrash(crashflag1, BulletRect, dir, x, y);
+						crashflag2 = mp->mappiece->BeingCrash(crashflag1, BulletRect, dir, x, y, powerLevel);
 				mp = mp->next;
 			}
 		}
@@ -931,7 +941,7 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 			{
 				if (X1 - 1 == mp->mappiece->X)
 					if (Y1 - 1 == mp->mappiece->Y)
-						crashflag1 = mp->mappiece->BeingCrash(crashflag2, BulletRect, dir, x, y);
+						crashflag1 = mp->mappiece->BeingCrash(crashflag2, BulletRect, dir, x, y, powerLevel);
 				mp = mp->next;
 			}
 
@@ -943,20 +953,23 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 			{
 				if (X2 - 1 == mp->mappiece->X)
 					if (Y2 - 1 == mp->mappiece->Y)
-						crashflag2 = mp->mappiece->BeingCrash(crashflag1, BulletRect, dir, x, y);
+						crashflag2 = mp->mappiece->BeingCrash(crashflag1, BulletRect, dir, x, y, powerLevel);
 				mp = mp->next;
 			}
 
 		}
 		if (crashflag1 || crashflag2)
 			return 1;
-		//检测子弹是否命中旗帜（基地�?
+		//检测子弹是否命中基地（老鹰）
 		{
-			RECT FlagRect = { 926, 704, 990, 768 };
+			RECT FlagRect = { FlagGameX, FlagGameY, FlagGameX + 64, FlagGameY + 64 };
 			if (IntersectRect(&Rect, &FlagRect, &BulletRect))
 			{
 				if ((int)GetTickCount() >= FortifyEndTime)
+				{
+					BaseDestroyed = true;
 					GameOverFlag = true;
+				}
 				return 1;
 			}
 		}
@@ -1713,6 +1726,7 @@ void GS::NewStage()
 	//���õ�ͼ����
 	SGOy = 960;
 	GameOverFlag = false;
+	BaseDestroyed = false;
 	EnemyNumber = 30;
 	player.Alive = true;
 	player.Health_Point = 1;
@@ -3049,7 +3063,7 @@ bool Bullet::Logic()
 		break;
 	}
 
-    int result = Crash( 0,bullet.x, bullet.y, Speed, Dir,Shooter,ID, MovedPixel);
+    int result = Crash( 0,bullet.x, bullet.y, Speed, Dir,Shooter,ID, MovedPixel, PowerLevel);
 	if (result == 1)
 	{
 		if(PowerLevel==0)
@@ -3420,7 +3434,7 @@ bool MapPiece::Create(int mapid)
 	return false;
 }
 
-bool MapPiece::BeingCrash(bool flag2, RECT & rect, int dir, int x, int y)
+bool MapPiece::BeingCrash(bool flag2, RECT & rect, int dir, int x, int y, int powerLevel)
 {
 	bool flag = false, flag1 = true;
 	RECT Rect, Rect1, BoomRect = { 0 };
@@ -3532,6 +3546,7 @@ bool MapPiece::BeingCrash(bool flag2, RECT & rect, int dir, int x, int y)
 	}
 	else if (rp->rect->left < 64)
 	{
+		//钢墙：普通子弹无法击穿，仅最高等级(PowerLevel>=3)可破坏
 		while (rp != NULL)
 		{
 			Rect1.left = (X + 1) * 64 + (rp->rect->left - 32) * 2;
@@ -3540,27 +3555,34 @@ bool MapPiece::BeingCrash(bool flag2, RECT & rect, int dir, int x, int y)
 			Rect1.right = Rect1.left + (rp->rect->right - rp->rect->left) * 2;
 			if (IntersectRect(&Rect, &rect, &Rect1))
 			{
-				if (rp->last != NULL)
+				flag = true;
+				if (powerLevel >= 3)
 				{
-					if (rp->next != NULL) {
-						rp->last->next = rp->next;
-						rp->next->last = rp->last;
+					if (rp->last != NULL)
+					{
+						if (rp->next != NULL) {
+							rp->last->next = rp->next;
+							rp->next->last = rp->last;
+						}
+						else
+							rp->last->next = NULL;
+					}
+					else if (rp->next != NULL)
+					{
+						rp->next->last = NULL;
+						rectlisthead->next = rp->next;
 					}
 					else
-						rp->last->next = NULL;
-				}
-				else if (rp->next != NULL)
-				{
-					rp->next->last = NULL;
-					rectlisthead->next = rp->next;
+					{
+						rectlisthead->next = NULL;
+					}
+					delete rp;
+					rp = rectlisthead->next;
 				}
 				else
 				{
-					rectlisthead->next = NULL;
+					break; //普通子弹碰到钢墙直接停止
 				}
-				delete rp;
-				flag = true;
-				rp = rectlisthead->next;
 			}
 			else
 				rp = rp->next;

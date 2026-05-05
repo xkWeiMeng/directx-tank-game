@@ -153,7 +153,7 @@ public:
 	void Draw();
 	void CreateMapRect(int x, int y, int wight, int hight);
 	bool Create(int mapid);
-	bool BeingCrash(bool,RECT&rect,int dir,int x,int y);
+	bool BeingCrash(bool,RECT&rect,int dir,int x,int y,int powerLevel=0);
 	int PECrach(int dir,RECT&rect);
 };
 struct  MapPieceList
