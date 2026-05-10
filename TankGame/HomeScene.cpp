@@ -745,6 +745,17 @@ void HomeScene::Update()
 		choose = choose > 0 ? choose - 1 : 4;
 		choose %= 5;
 	}
+	// 左右键切换难度
+	if (Key_Up(DIK_LEFT))
+	{
+		int lv = Global::Difficulty::Level;
+		Global::Difficulty::Level = lv > 0 ? lv - 1 : 2;
+	}
+	if (Key_Up(DIK_RIGHT))
+	{
+		int lv = Global::Difficulty::Level;
+		Global::Difficulty::Level = (lv + 1) % 3;
+	}
 	if (Key_Up(DIK_SPACE))
 	{
 		Global::Home::selectedType = choose;
@@ -864,6 +875,23 @@ void HomeScene::Render()
 			FontPrint(font, menuX, yPos, Resource::Home::OptionsStr[i],
 				D3DCOLOR_XRGB(gray, gray, gray + 10));
 		}
+	}
+
+	// ===== 难度指示器 =====
+	{
+		const char* diffNames[] = { "EASY", "NORMAL", "HARD" };
+		D3DCOLOR diffColors[] = {
+			D3DCOLOR_XRGB(100, 200, 100),
+			D3DCOLOR_XRGB(200, 200, 100),
+			D3DCOLOR_XRGB(255, 80, 80)
+		};
+		int dl = Global::Difficulty::Level;
+		// 三角形箭头提示
+		FontPrint(hintFont, 350, 700, "<", D3DCOLOR_XRGB(150, 150, 150));
+		char diffBuf[64];
+		sprintf_s(diffBuf, "DIFFICULTY: %s", diffNames[dl]);
+		FontPrint(hintFont, 380, 700, diffBuf, diffColors[dl]);
+		FontPrint(hintFont, 650, 700, ">", D3DCOLOR_XRGB(150, 150, 150));
 	}
 
 	// ===== 闪烁提示文字 =====

@@ -77,5 +77,15 @@ namespace Global {
 		//声音开关
 		extern bool SoundSwicth;
 	}
+	namespace Difficulty {
+		// 0=简单, 1=普通, 2=困难
+		extern int Level;
+		// 难度参数查表
+		int GetEnemyTotal();       //每关敌人总数
+		int GetSpawnInterval();    //敌人生成间隔(100ms单位)
+		int GetHighGradeChance();  //高级敌人(grade 4+)概率(百分比)
+		int GetPlayerLives();      //玩家初始生命
+		float GetScoreMultiplier();//分数倍率
+	}
 
 }

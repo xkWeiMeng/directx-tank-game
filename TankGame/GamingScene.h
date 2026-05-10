@@ -106,6 +106,9 @@ public:
 	int Time;
 	bool IsFlashEnemy;//闪烁敌人标志
 	int LastShootTime;//上次射击时间（GetTickCount）
+	int LastCrashDir;  //上次碰墙方向
+	int CrashCount;    //连续碰墙次数
+	bool IsBossEnemy;  //Boss敌人标志
 };
 
 

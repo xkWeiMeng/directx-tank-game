@@ -236,6 +236,13 @@ bool ReadPlayerSettingInHD()
 	{
 		Global::Debug::ShowDebugInfo = (buf != 0);
 	}
+	// 读取难度（兼容旧版配置文件）
+	if (in.read((char*)&buf, 1))
+	{
+		int lv = buf;
+		if (lv >= 0 && lv <= 2)
+			Global::Difficulty::Level = lv;
+	}
 	in.close();
 	return true;
 }

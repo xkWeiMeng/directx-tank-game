@@ -405,6 +405,8 @@ bool GSS::WritePlayerSettingIbHD()
 	out.write((char*)&buf, 1);
 	buf = (unsigned char)Global::Debug::ShowDebugInfo;
 	out.write((char*)&buf, 1);
+	buf = (unsigned char)Global::Difficulty::Level;
+	out.write((char*)&buf, 1);
 	out.close();
 	return true;
 }

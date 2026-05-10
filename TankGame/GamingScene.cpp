@@ -36,9 +36,117 @@ namespace GS {
 	bool GameOverFlag = false;
 	bool IsDoublePlayer = false;
 	int SGOy = 960;
-	int EnemyNumber = 30;
+	int EnemyNumber = 30; //运行时由难度设置覆盖
 	int FreezeEndTime = 0;   //定时器：敌人冻结结束时间
 	int FortifyEndTime = 0;  //铲子：基地加固结束时间
+	//计分系统
+	int Score1 = 0;          //玩家一总分
+	int Score2 = 0;          //玩家二总分
+	int KillCount1 = 0;      //玩家一本关击杀数
+	int KillCount2 = 0;      //玩家二本关击杀数
+	int TotalKills1 = 0;     //玩家一累计击杀
+	int TotalKills2 = 0;     //玩家二累计击杀
+	int KillsByGrade1[4] = {0}; //玩家一按敌人类型击杀(基础/追击/快速/重型)
+	int KillsByGrade2[4] = {0}; //玩家二按敌人类型击杀
+	int LastKillTime1 = 0;   //玩家一上次击杀时间
+	int LastKillTime2 = 0;   //玩家二上次击杀时间
+	int ComboCount1 = 0;     //玩家一连杀计数
+	int ComboCount2 = 0;     //玩家二连杀计数
+	int StageStartTime = 0;  //关卡开始时间
+	int StageSurvived = 0;   //存活关卡数
+	//通关结算
+	bool StageClearFlag = false;
+	int StageClearTime = 0;
+	int StageClearChoice = 0; // 0=继续, 1=返回菜单
+	//失败结算选择
+	int GameOverChoice = 0;  // 0=重试, 1=返回菜单
+	//Boss系统
+	bool BossStage = false;       //当前关是否为Boss关
+	bool BossSpawned = false;     //Boss是否已生成
+	bool BossActive = false;      //场上是否有存活Boss
+
+	//根据敌人grade计算分数
+	int GetKillScore(int grade)
+	{
+		if (grade >= 100) return 1000;   //Boss
+		if (grade <= 1) return 100;      //基础型
+		else if (grade <= 3) return 200; //追击型
+		else if (grade <= 5) return 300; //快速型
+		else return 400;                 //重型
+	}
+	//获取敌人类型索引(0-3)
+	int GetGradeCategory(int grade)
+	{
+		if (grade >= 100) return 3;  //Boss归类为重型
+		if (grade <= 1) return 0;
+		else if (grade <= 3) return 1;
+		else if (grade <= 5) return 2;
+		else return 3;
+	}
+	//记录击杀并计分
+	void RecordKill(int shooter, int enemyGrade)
+	{
+		int baseScore = (int)(GetKillScore(enemyGrade) * Global::Difficulty::GetScoreMultiplier());
+		int category = GetGradeCategory(enemyGrade);
+		int now = GetTickCount();
+
+		if (shooter == 0) //P1
+		{
+			KillCount1++;
+			TotalKills1++;
+			KillsByGrade1[category]++;
+			//连杀加成：2秒内连续击杀
+			if (now - LastKillTime1 < 2000)
+			{
+				ComboCount1++;
+				float multiplier = 1.0f + ComboCount1 * 0.5f;
+				Score1 += (int)(baseScore * multiplier);
+			}
+			else
+			{
+				ComboCount1 = 0;
+				Score1 += baseScore;
+			}
+			LastKillTime1 = now;
+		}
+		else if (shooter == 1) //P2
+		{
+			KillCount2++;
+			TotalKills2++;
+			KillsByGrade2[category]++;
+			if (now - LastKillTime2 < 2000)
+			{
+				ComboCount2++;
+				float multiplier = 1.0f + ComboCount2 * 0.5f;
+				Score2 += (int)(baseScore * multiplier);
+			}
+			else
+			{
+				ComboCount2 = 0;
+				Score2 += baseScore;
+			}
+			LastKillTime2 = now;
+		}
+	}
+	//通关时间奖励
+	int GetTimeBonus()
+	{
+		int elapsed = (GetTickCount() - StageStartTime) / 1000;
+		if (elapsed <= 60) return 500;
+		else if (elapsed <= 120) return 300;
+		else if (elapsed <= 180) return 100;
+		return 0;
+	}
+	//评价等级
+	char GetRank(int score, int kills)
+	{
+		int total = score + kills * 10;
+		if (total >= 5000) return 'S';
+		else if (total >= 3000) return 'A';
+		else if (total >= 1500) return 'B';
+		return 'C';
+	}
+	void ShowStageClear();  //通关结算画面
 	//基地（老鹰）在游戏区域内的位置，网格(6,12)
 	int FlagGameX = (6 + 1) * 64; // 448
 	int FlagGameY = (12 + 1) * 64; // 832
@@ -70,7 +178,7 @@ namespace GS {
 	void CreateAward(int x, int y, int type);
 	bool DelListNode(AwardItemList*listhead, unsigned long id);
 	void CheckAwardCollision();
-	void DestroyAllEnemies();
+	void DestroyAllEnemies(int scorer = 0); //scorer: 0=P1, 1=P2
 	void AddBulletToList(Bullet* b); //添加子弹到链表
 	void UpdateLaser(Player& p); //激光更新：射线检测+伤害
 	void DrawLaserBeam(Player& p); //激光渲染
@@ -287,6 +395,14 @@ bool GamingScene::Init()
 	SidebarValueFont = MakeFont("Consolas", 32);
 	SidebarSmallFont = MakeFont("Consolas", 18);
 	D3DXCreateLine(d3dDev, &SidebarLine);
+	StageStartTime = GetTickCount();
+	StageClearFlag = false;
+	GameOverChoice = 0;
+	StageSurvived = 0;
+	// Boss系统初始化
+	BossStage = (NowLevel % 3 == 0); // 每3关一个Boss关
+	BossSpawned = false;
+	BossActive = false;
 	return 1;
 }
 
@@ -346,7 +462,7 @@ void GamingScene::End()
 	player.Dir = Dirction::up;
 	player.player.x = 64 * 6;
 	player.player.y = 64 * 13;
-	player.Lift = 1;
+	player.Lift = Global::Difficulty::GetPlayerLives();
 	player.Health_Point = 1;
 	player.Grade = 0;
 	player.ApplyGradeStats();
@@ -357,7 +473,7 @@ void GamingScene::End()
 		player2.Dir = Dirction::up;
 		player2.player.x = 64 * 6;
 		player2.player.y = 64 * 13;
-		player2.Lift = 1;
+		player2.Lift = Global::Difficulty::GetPlayerLives();
 		player2.Health_Point = 1;
 		player2.Grade = 0;
 		player2.ApplyGradeStats();
@@ -365,9 +481,22 @@ void GamingScene::End()
 	//重置地图数据
 	SGOy = 960;
 	GameOverFlag = false;
+	StageClearFlag = false;
 	BaseDestroyed = false;
-	EnemyNumber = 30;
+	EnemyNumber = Global::Difficulty::GetEnemyTotal();
 	HaveBornEnemyNumber = 0;
+	//重置计分
+	Score1 = 0; Score2 = 0;
+	KillCount1 = 0; KillCount2 = 0;
+	TotalKills1 = 0; TotalKills2 = 0;
+	memset(KillsByGrade1, 0, sizeof(KillsByGrade1));
+	memset(KillsByGrade2, 0, sizeof(KillsByGrade2));
+	ComboCount1 = 0; ComboCount2 = 0;
+	StageSurvived = 0;
+	GameOverChoice = 0;
+	BossStage = false;
+	BossSpawned = false;
+	BossActive = false;
 	BornPlayer1MapPiece.clear();
 	BornPlayer2MapPiece.clear();
 	BornEnemyMapPiece.clear();
@@ -445,7 +574,8 @@ void GamingScene::Render()
 			SidebarLine->End();
 			// 前景条（红色渐变）
 			float barMax = (float)(panelW - 20);
-			float barLen = barMax * min(EnemyNumber, 30) / 30.0f;
+			int totalEnemy = Global::Difficulty::GetEnemyTotal();
+			float barLen = barMax * min(EnemyNumber, totalEnemy) / (float)totalEnemy;
 			if (barLen > 0)
 			{
 				D3DXVECTOR2 barFg[2] = { D3DXVECTOR2((float)(panelX + 10), 132.0f), D3DXVECTOR2((float)(panelX + 10) + barLen, 132.0f) };
@@ -468,6 +598,15 @@ void GamingScene::Render()
 			char stageBuf[8];
 			sprintf_s(stageBuf, "%02d", NowLevel);
 			FontPrint(SidebarValueFont, cx - 14, 187, stageBuf, D3DCOLOR_XRGB(255, 220, 100));
+		}
+		// Boss关标识
+		if (BossStage && SidebarSmallFont)
+		{
+			int bFlash = (GetTickCount() / 400) % 2;
+			if (BossActive)
+				FontPrint(SidebarSmallFont, panelX + 16, 210, "!! BOSS !!", D3DCOLOR_XRGB(255, bFlash ? 200 : 60, 30));
+			else if (!BossSpawned)
+				FontPrint(SidebarSmallFont, panelX + 12, 210, "BOSS STAGE", D3DCOLOR_XRGB(255, 180, 50));
 		}
 
 		// --- 分隔线 ---
@@ -555,6 +694,27 @@ void GamingScene::Render()
 			}
 		}
 
+		// --- 分隔线 ---
+		if (SidebarSmallFont)
+			FontPrint(SidebarSmallFont, panelX + 4, IsDoublePlayer ? 455 : 340, "----------", D3DCOLOR_XRGB(80, 80, 80));
+
+		// --- 分数显示 ---
+		int scoreY = IsDoublePlayer ? 475 : 360;
+		if (SidebarTitleFont)
+			FontPrint(SidebarTitleFont, panelX + 8, scoreY, "SCORE", D3DCOLOR_XRGB(255, 215, 0));
+		if (SidebarValueFont)
+		{
+			char scoreBuf[16];
+			sprintf_s(scoreBuf, "%d", Score1);
+			FontPrint(SidebarSmallFont, panelX + 8, scoreY + 24, scoreBuf, D3DCOLOR_XRGB(255, 255, 200));
+		}
+		if (IsDoublePlayer && SidebarSmallFont)
+		{
+			char scoreBuf2[16];
+			sprintf_s(scoreBuf2, "%d", Score2);
+			FontPrint(SidebarSmallFont, panelX + 8, scoreY + 44, scoreBuf2, D3DCOLOR_XRGB(255, 200, 150));
+		}
+
 		// --- 旗帜图标保留在底部 ---
 		Sprite_Transform_Draw(Flag, 926, 704, 32, 32, 0, 1, 0, 2.0, D3DCOLOR_XRGB(255, 255, 255));
 	}
@@ -636,6 +796,11 @@ void GamingScene::Render()
 	{
 		ShowGameOver();
 	}
+	//通关结算
+	if (StageClearFlag)
+	{
+		ShowStageClear();
+	}
 	DIDA();//处理时间相关信息
 }
 //游戏逻辑更新
@@ -658,11 +823,48 @@ void GamingScene::Update()
 				StarSoundPlaying = false;
 			}
 	}
-	if (!GameOverFlag) {
+	if (!GameOverFlag && !StageClearFlag) {
 		//检查敌人数量 判断是否胜利
 		if (EnemyNumber <= 0)
 		{
-			StartNextStage();
+			if (BossStage && !BossSpawned)
+			{
+				// Boss关：普通敌人清完后生成Boss
+				BossSpawned = true;
+				BossActive = true;
+				int bossHP = 10 + NowLevel * 2;
+				int bossX = 448, bossY = 128; // 从上方中间出现
+				if (BornEnemyMapPiece.size() != 0)
+				{
+					int idx = rand() % (BornEnemyMapPiece.size() / 2);
+					bossX = (BornEnemyMapPiece.at(idx * 2) + 1) * 64;
+					bossY = (BornEnemyMapPiece.at(idx * 2 + 1) + 1) * 64;
+				}
+				// Grade 100+ = boss标记, 慢速高HP高攻速
+				Enemy* boss = new Enemy(bossX, bossY, 3 * 64, bossHP, 3, 100, Dirction::below);
+				boss->IsBossEnemy = true;
+				boss->PowerLevel = 3;
+				boss->BulletSpeed = 10 * 64;
+				// 插入敌人链表
+				EnemyList* newNode = new EnemyList;
+				newNode->enemy = boss;
+				newNode->last = NULL;
+				newNode->next = enemylisthead.next;
+				if (enemylisthead.next) enemylisthead.next->last = newNode;
+				enemylisthead.next = newNode;
+				EnemyNumber = 1; // Boss算1个敌人
+			}
+			else if (!BossActive)
+			{
+				StageClearFlag = true;
+				StageClearTime = GetTickCount();
+				StageClearChoice = 0;
+				StageSurvived++;
+				int timeBonus = GetTimeBonus();
+				Score1 += timeBonus;
+				if (IsDoublePlayer)
+					Score2 += timeBonus;
+			}
 		}
 		//玩家一
 		if (player.Alive)
@@ -781,7 +983,7 @@ void GamingScene::Update()
 						{}
 						else
 						{
-							player2.Shoot(0, player2.PowerLevel);
+							player2.Shoot(1, player2.PowerLevel);
 							ShootTime2 = 0;
 						}
 					}
@@ -814,15 +1016,29 @@ void GamingScene::Update()
 		if (NeedBornEnemy)
 		if (ShowTime)//ShowTime 100ms一次
 				BornEnemy++;
-		if (BornEnemy >= 10)//生成新的敌人
+		if (BornEnemy >= Global::Difficulty::GetSpawnInterval())//生成新的敌人
 		{
-			if (HaveBornEnemyNumber > 30)
+			if (HaveBornEnemyNumber > Global::Difficulty::GetEnemyTotal())
 				NeedBornEnemy = 0;
 			if (BornEnemyMapPiece.size() != 0)
 			{
 				//根据地图生成地点随机生成敌人
 				int atbuf= rand() % (BornEnemyMapPiece.size() / 2);
-				int grade = rand() % 8;
+				// 根据难度和关卡递进决定敌人等级分布
+				int highChance = Global::Difficulty::GetHighGradeChance();
+				// 关卡递进：每关高级敌人概率增加5%（上限90%）
+				int stageBonus = (NowLevel - 1) * 5;
+				highChance = min(90, highChance + stageBonus);
+				int roll = rand() % 100;
+				int grade;
+				if (roll < highChance / 2) // 重型(grade 6-7)
+					grade = 6 + rand() % 2;
+				else if (roll < highChance) // 快速型(grade 4-5)
+					grade = 4 + rand() % 2;
+				else if (roll < highChance + (100 - highChance) / 2) // 追击型(grade 2-3)
+					grade = 2 + rand() % 2;
+				else // 基础型(grade 0-1)
+					grade = rand() % 2;
 				int speed, hp, as;
 				//根据等级分配不同属性
 				if (grade <= 1) {
@@ -848,7 +1064,15 @@ void GamingScene::Update()
 			else
 			{
 				HaveBornEnemyNumber++;
-				int grade2 = rand() % 8;
+				int hc2 = Global::Difficulty::GetHighGradeChance();
+				int sb2 = (NowLevel - 1) * 5;
+				hc2 = min(90, hc2 + sb2);
+				int roll2 = rand() % 100;
+				int grade2;
+				if (roll2 < hc2 / 2) grade2 = 6 + rand() % 2;
+				else if (roll2 < hc2) grade2 = 4 + rand() % 2;
+				else if (roll2 < hc2 + (100 - hc2) / 2) grade2 = 2 + rand() % 2;
+				else grade2 = rand() % 2;
 				int speed2, hp2, as2;
 				if (grade2 <= 1) { speed2 = 4 * 64; hp2 = 1; as2 = 1; }
 				else if (grade2 <= 3) { speed2 = 5 * 64; hp2 = 1; as2 = 2; }
@@ -925,13 +1149,52 @@ void GamingScene::Update()
 		ClearUselessObj();
 		//获取时间相关
 	}
+	else if (StageClearFlag)
+	{
+		//通关结算画面：等待2秒后按键进入下一关
+		int elapsed = GetTickCount() - StageClearTime;
+		if (elapsed > 2000)
+		{
+			if (Key_Up(DIK_RETURN) || Key_Up(DIK_SPACE))
+			{
+				StageClearFlag = false;
+				//重置关卡击杀统计
+				memset(KillsByGrade1, 0, sizeof(KillsByGrade1));
+				memset(KillsByGrade2, 0, sizeof(KillsByGrade2));
+				KillCount1 = 0;
+				KillCount2 = 0;
+				ComboCount1 = 0;
+				ComboCount2 = 0;
+				StartNextStage();
+				StageStartTime = GetTickCount();
+			}
+		}
+	}
 	else
 	{
+		//GameOver结算：上下键选择，回车确认
+		if (Key_Up(DIK_UP) || Key_Up(DIK_DOWN))
+			GameOverChoice = 1 - GameOverChoice;
 		if (KEY_DOWN(VK_RETURN))
 		{
-			RestartThisStage();
-			GameOverFlag = false;
-			BaseDestroyed = false;
+			if (GameOverChoice == 0)
+			{
+				//重置分数和统计
+				Score1 = 0; Score2 = 0;
+				TotalKills1 = 0; TotalKills2 = 0;
+				memset(KillsByGrade1, 0, sizeof(KillsByGrade1));
+				memset(KillsByGrade2, 0, sizeof(KillsByGrade2));
+				KillCount1 = 0; KillCount2 = 0;
+				StageSurvived = 0;
+				RestartThisStage();
+				GameOverFlag = false;
+				BaseDestroyed = false;
+				StageStartTime = GetTickCount();
+			}
+			else
+			{
+				Game_ChangeScene(GAME_STATE::Home);
+			}
 		}
 	}
 	ShowTime = false;
@@ -955,14 +1218,128 @@ void GS::ShowGameOver()
 			SGOy -= 8;
 			oldtime = GetTickCount();
 		}
-		if (SGOy < 320)
-			Sprite_Transform_Draw(GameOver, 232, 320, 248, 160,
-				0, 1, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-		else
-			Sprite_Transform_Draw(GameOver, 232, SGOy, 248, 160,
-				0, 1, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
+		int goY = SGOy < 240 ? 240 : SGOy;
+		Sprite_Transform_Draw(GameOver, 232, goY, 248, 160,
+			0, 1, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
 
+		//GameOver图片到位后显示统计信息
+		if (SGOy < 240 && SidebarSmallFont && SidebarTitleFont)
+		{
+			int statY = 420;
+			int cx = 480;
+			char buf[64];
+
+			sprintf_s(buf, "KILLS: %d", TotalKills1);
+			FontPrint(SidebarSmallFont, cx - 60, statY, buf, D3DCOLOR_XRGB(255, 200, 200));
+			if (IsDoublePlayer)
+			{
+				sprintf_s(buf, "P2 KILLS: %d", TotalKills2);
+				FontPrint(SidebarSmallFont, cx - 60, statY + 22, buf, D3DCOLOR_XRGB(255, 200, 150));
+			}
+			sprintf_s(buf, "STAGE: %d", StageSurvived + 1);
+			FontPrint(SidebarSmallFont, cx - 60, statY + 44, buf, D3DCOLOR_XRGB(200, 200, 255));
+			sprintf_s(buf, "SCORE: %d", Score1);
+			FontPrint(SidebarSmallFont, cx - 60, statY + 66, buf, D3DCOLOR_XRGB(255, 215, 0));
+			if (IsDoublePlayer)
+			{
+				sprintf_s(buf, "P2 SCORE: %d", Score2);
+				FontPrint(SidebarSmallFont, cx - 60, statY + 88, buf, D3DCOLOR_XRGB(255, 200, 100));
+			}
+
+			//选择项
+			int choiceY = IsDoublePlayer ? statY + 120 : statY + 100;
+			D3DCOLOR retryColor = GameOverChoice == 0 ? D3DCOLOR_XRGB(255, 255, 100) : D3DCOLOR_XRGB(160, 160, 160);
+			D3DCOLOR menuColor = GameOverChoice == 1 ? D3DCOLOR_XRGB(255, 255, 100) : D3DCOLOR_XRGB(160, 160, 160);
+			FontPrint(SidebarSmallFont, cx - 40, choiceY, "RETRY", retryColor);
+			FontPrint(SidebarSmallFont, cx - 40, choiceY + 28, "MENU", menuColor);
+		}
 	}
+//通关结算画面
+void GS::ShowStageClear()
+{
+	if (!SidebarTitleFont || !SidebarValueFont || !SidebarSmallFont)
+		return;
+
+	int cx = 480;
+	int startY = 200;
+	char buf[64];
+
+	//标题
+	sprintf_s(buf, "STAGE %02d CLEAR!", NowLevel);
+	FontPrint(SidebarTitleFont, cx - 100, startY, buf, D3DCOLOR_XRGB(255, 215, 0));
+
+	//击杀统计表
+	const char* typeNames[] = { "BASIC", "CHASE", "FAST ", "HEAVY" };
+	const int typeScores[] = { 100, 200, 300, 400 };
+	int tableY = startY + 50;
+
+	FontPrint(SidebarSmallFont, cx - 120, tableY, "TYPE    PTS  x  P1", D3DCOLOR_XRGB(200, 200, 200));
+	if (IsDoublePlayer)
+		FontPrint(SidebarSmallFont, cx + 140, tableY, "P2", D3DCOLOR_XRGB(200, 200, 200));
+
+	for (int i = 0; i < 4; i++)
+	{
+		int y = tableY + 26 + i * 24;
+		sprintf_s(buf, "%s  %3d  x %2d", typeNames[i], typeScores[i], KillsByGrade1[i]);
+		FontPrint(SidebarSmallFont, cx - 120, y, buf, D3DCOLOR_XRGB(255, 255, 255));
+		if (IsDoublePlayer)
+		{
+			sprintf_s(buf, "%2d", KillsByGrade2[i]);
+			FontPrint(SidebarSmallFont, cx + 140, y, buf, D3DCOLOR_XRGB(255, 200, 150));
+		}
+	}
+
+	//总计
+	int totalY = tableY + 130;
+	sprintf_s(buf, "TOTAL KILLS: %d", KillCount1);
+	FontPrint(SidebarSmallFont, cx - 100, totalY, buf, D3DCOLOR_XRGB(255, 200, 200));
+
+	//用时
+	int elapsed = (StageClearTime - StageStartTime) / 1000;
+	sprintf_s(buf, "TIME: %d:%02d", elapsed / 60, elapsed % 60);
+	FontPrint(SidebarSmallFont, cx - 100, totalY + 24, buf, D3DCOLOR_XRGB(200, 200, 255));
+
+	//时间奖励
+	int timeBonus = 0;
+	if (elapsed <= 60) timeBonus = 500;
+	else if (elapsed <= 120) timeBonus = 300;
+	else if (elapsed <= 180) timeBonus = 100;
+	if (timeBonus > 0)
+	{
+		sprintf_s(buf, "TIME BONUS: +%d", timeBonus);
+		FontPrint(SidebarSmallFont, cx - 100, totalY + 48, buf, D3DCOLOR_XRGB(100, 255, 100));
+	}
+
+	//总分
+	sprintf_s(buf, "SCORE: %d", Score1);
+	FontPrint(SidebarSmallFont, cx - 100, totalY + 72, buf, D3DCOLOR_XRGB(255, 215, 0));
+	if (IsDoublePlayer)
+	{
+		sprintf_s(buf, "P2 SCORE: %d", Score2);
+		FontPrint(SidebarSmallFont, cx - 100, totalY + 96, buf, D3DCOLOR_XRGB(255, 200, 100));
+	}
+
+	//评价
+	char rank = GetRank(Score1, TotalKills1);
+	sprintf_s(buf, "RANK: %c", rank);
+	D3DCOLOR rankColor;
+	switch (rank)
+	{
+	case 'S': rankColor = D3DCOLOR_XRGB(255, 215, 0); break;
+	case 'A': rankColor = D3DCOLOR_XRGB(100, 255, 100); break;
+	case 'B': rankColor = D3DCOLOR_XRGB(100, 200, 255); break;
+	default:  rankColor = D3DCOLOR_XRGB(200, 200, 200); break;
+	}
+	FontPrint(SidebarValueFont, cx - 60, totalY + 120, buf, rankColor);
+
+	//提示
+	int elapsed2 = GetTickCount() - StageClearTime;
+	if (elapsed2 > 2000 && (elapsed2 / 500) % 2 == 0)
+	{
+		FontPrint(SidebarSmallFont, cx - 100, totalY + 170, "PRESS ENTER TO CONTINUE",
+			D3DCOLOR_XRGB(160, 160, 160));
+	}
+}
 //专门服务于bullet::logic的碰撞检测函数
 int  GS::Crash(int iswho, int x, int y, int speed, int dir, 
 	           int shooter, unsigned long id, int movedmixel, int powerLevel, int bulletType) {
@@ -1005,7 +1382,7 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 
 		RECT EnemyRect, Rect;
 		EnemyList* ep = enemylisthead.next;
-		if (shooter == 0)
+		if (shooter == 0 || shooter == 1) //玩家子弹（0=P1, 1=P2）
 		{
 			while (ep != NULL)
 			{
@@ -1020,8 +1397,10 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 						ep->enemy->Health_Point -= 1;
 						if (ep->enemy->Health_Point <= 0)
 						{
-							if (ep->enemy->IsFlashEnemy)
+							RecordKill(shooter, ep->enemy->Grade);
+							if (ep->enemy->IsFlashEnemy || ep->enemy->IsBossEnemy)
 								CreateAward(ep->enemy->player.x, ep->enemy->player.y, rand() % 6);
+							if (ep->enemy->IsBossEnemy) BossActive = false;
 							CreateBoom(ep->enemy->player.x, ep->enemy->player.y, 2, ep->enemy->Dir);
 							EnemyList* nextEp = ep->next;
 							DelListNode(enemylisthead.next, ep->enemy->ID);
@@ -1032,9 +1411,18 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 						ep = ep->next;
 						continue;
 					}
-					//普通/散弹：直接击杀
-					if (ep->enemy->IsFlashEnemy)
+					// Boss：普通/散弹扣1HP，不会一击必杀
+					if (ep->enemy->IsBossEnemy && ep->enemy->Health_Point > 1)
+					{
+						ep->enemy->Health_Point -= 1;
+						CreateBoom(ep->enemy->player.x, ep->enemy->player.y, 1, ep->enemy->Dir);
+						return 2;
+					}
+					//普通/散弹：击杀
+					RecordKill(shooter, ep->enemy->Grade);
+					if (ep->enemy->IsFlashEnemy || ep->enemy->IsBossEnemy)
 						CreateAward(ep->enemy->player.x, ep->enemy->player.y, rand() % 6);
+					if (ep->enemy->IsBossEnemy) BossActive = false;
 					CreateBoom(ep->enemy->player.x, ep->enemy->player.y, 2, ep->enemy->Dir);
 					DelListNode(enemylisthead.next, ep->enemy->ID);
 					EnemyNumber--;
@@ -1087,7 +1475,10 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 			BulletRectTest.left = bp->bullet->bullet.x;
 			if (IntersectRect(&Rect, &BulletRectTest, &BulletRect))
 			{
-				if (id != bp->bullet->ID && shooter != bp->bullet->Shooter)
+				//同阵营子弹不碰撞(0/1都是玩家, 2是敌人)
+				bool sameTeam = (shooter != 2 && bp->bullet->Shooter != 2) ||
+				                (shooter == 2 && bp->bullet->Shooter == 2);
+				if (id != bp->bullet->ID && !sameTeam)
 				{
 					AddUselessObj(bp->bullet->ID);
 					return 1;
@@ -1956,12 +2347,15 @@ void GS::NewStage()
 	//重置奖励效果计时器
 	FreezeEndTime = 0;
 	FortifyEndTime = 0;
+	//重置连杀
+	ComboCount1 = 0;
+	ComboCount2 = 0;
 	//保留等级，重置其他属性
 	player.Speed = 5 * 64;
 	player.Dir = Dirction::up;
 	player.player.x = 64 * 6;
 	player.player.y = 64 * 13;
-	player.Lift = 1;
+	player.Lift = Global::Difficulty::GetPlayerLives();
 	player.Health_Point = 1;
 	player.ApplyGradeStats();
 
@@ -1971,7 +2365,7 @@ void GS::NewStage()
 		player2.Dir = Dirction::up;
 		player2.player.x = 64 * 6;
 		player2.player.y = 64 * 13;
-		player2.Lift = 1;
+		player2.Lift = Global::Difficulty::GetPlayerLives();
 		player2.Health_Point = 1;
 		player2.ApplyGradeStats();
 	}
@@ -1979,7 +2373,7 @@ void GS::NewStage()
 	SGOy = 960;
 	GameOverFlag = false;
 	BaseDestroyed = false;
-	EnemyNumber = 30;
+	EnemyNumber = Global::Difficulty::GetEnemyTotal();
 	player.Alive = true;
 	player.Health_Point = 1;
 	player.FlashFlag = true;
@@ -2001,6 +2395,10 @@ void GS::NewStage()
 		player2.player.y = (BornPlayer2MapPiece.at(atbuf * 2 + 1) + 1) * 64;
 	}
 	HaveBornEnemyNumber = 0;
+	// Boss系统重置
+	BossStage = (NowLevel % 3 == 0);
+	BossSpawned = false;
+	BossActive = false;
 }
 
 void GS::ReadNextMap()
@@ -2195,7 +2593,7 @@ int* ai_basic(int state, bool cflag, float ex, float ey)
 }
 
 // Grade 2-3: 追击型AI
-// 主动追踪玩家，尝试对齐后射击，会躲避子弹
+// 主动追踪玩家，尝试对齐后射击，会躲避子弹，避免扎堆
 int* ai_aggressive(int state, bool cflag, float ex, float ey)
 {
 	static int a[2];
@@ -2211,6 +2609,35 @@ int* ai_aggressive(int state, bool cflag, float ex, float ey)
 			targetX = player2.player.x;
 			targetY = player2.player.y;
 		}
+	}
+
+	// 协作：检测附近队友，如果太近则分散
+	int nearbyCount = 0;
+	float avgNearX = 0, avgNearY = 0;
+	EnemyList* ep = enemylisthead.next;
+	while (ep != NULL)
+	{
+		if (ep->enemy->Alive && (ep->enemy->player.x != ex || ep->enemy->player.y != ey))
+		{
+			float dist = abs(ex - ep->enemy->player.x) + abs(ey - ep->enemy->player.y);
+			if (dist < 120) // 距离阈值
+			{
+				nearbyCount++;
+				avgNearX += ep->enemy->player.x;
+				avgNearY += ep->enemy->player.y;
+			}
+		}
+		ep = ep->next;
+	}
+	// 如果附近有2+队友，远离队友群中心
+	if (nearbyCount >= 2 && rand() % 3 == 0)
+	{
+		avgNearX /= nearbyCount;
+		avgNearY /= nearbyCount;
+		// 反方向移动
+		a[0] = DirToward(avgNearX, avgNearY, ex, ey); // 远离
+		a[1] = 0;
+		return a;
 	}
 
 	//优先闪避来袭子弹
@@ -2400,6 +2827,8 @@ int* ai_heavy(int state, bool cflag, float ex, float ey)
 //敌人AI分发函数（根据Grade选择不同AI）
 int* enemyAI(int grade, int state, bool cflag, float ex, float ey)
 {
+	if (grade >= 100) // Boss使用重型AI
+		return ai_heavy(state, cflag, ex, ey);
 	if (grade <= 1)
 		return ai_basic(state, cflag, ex, ey);
 	else if (grade <= 3)
@@ -2423,6 +2852,9 @@ Enemy::Enemy(int x, int y, int speed, int hp,
 	Time = 0;
 	IsFlashEnemy = false;
 	LastShootTime = 0;
+	LastCrashDir = -1;
+	CrashCount = 0;
+	IsBossEnemy = false;
 	//根据等级设置子弹威力
 	if (grade >= 6)
 		PowerLevel = 3; //重型可破钢墙
@@ -2441,10 +2873,24 @@ bool Enemy::Draw()
 {
 	//闪烁敌人交替使用红色调渲染
 	D3DCOLOR drawColor = D3DCOLOR_XRGB(255, 255, 255);
-	if (IsFlashEnemy && (GetTickCount() / 200) % 2 == 0)
+	if (IsBossEnemy)
+	{
+		// Boss：金色脉冲光效
+		int pulse = (int)(180 + 75 * sin((float)GetTickCount() / 300.0f));
+		drawColor = D3DCOLOR_XRGB(255, pulse, 50);
+	}
+	else if (IsFlashEnemy && (GetTickCount() / 200) % 2 == 0)
 		drawColor = D3DCOLOR_XRGB(255, 100, 100);
 
-	if (Grade <= 3) {
+	if (IsBossEnemy)
+	{
+		// Boss使用重型坦克贴图，2x缩放
+		int bossFrame = Dir * 8 + 6 * 2 + (MoveStage ? 24 : 25);
+		Sprite_Transform_Draw(Enemy_TXTTURE, player.x - 14, player.y - 14, player.width, player.height,
+			bossFrame, player.columns, 0, 3, drawColor);
+		MoveStage = !MoveStage;
+	}
+	else if (Grade <= 3) {
 		if (MoveStage) {
 			Sprite_Transform_Draw(Enemy_TXTTURE, player.x, player.y, player.width, player.height,
 				Dir * 8 + Grade * 2, player.columns, 0, 2, drawColor);
@@ -2478,6 +2924,29 @@ bool Enemy::Draw()
 bool Enemy::Logic(bool st)
 {
 	int *a=enemyAI(Grade, Dir, CrashingFlag, player.x, player.y);
+	// 路径记忆：连续碰同方向墙3次，强制换90°方向
+	if (CrashingFlag)
+	{
+		if (Dir == LastCrashDir)
+			CrashCount++;
+		else
+		{
+			LastCrashDir = Dir;
+			CrashCount = 1;
+		}
+		if (CrashCount >= 3)
+		{
+			// 强制转90°（避免反复撞墙）
+			int perpDirs[4][2] = {{1,3},{0,2},{1,3},{0,2}}; // up→right/left, right→up/down, etc.
+			a[0] = perpDirs[Dir][rand() % 2];
+			a[1] = 0;
+			CrashCount = 0;
+		}
+	}
+	else
+	{
+		CrashCount = 0;
+	}
 	CrashingFlag = false;
 	int d = *a;
 	if (*(a + 1) == 1)
@@ -2904,7 +3373,7 @@ void GS::CheckAwardCollision()
 					FortifyEndTime = GetTickCount() + 20000;
 					break;
 				case 3: //炸弹：消灭所有敌人
-					DestroyAllEnemies();
+					DestroyAllEnemies(0); //P1得分
 					break;
 				case 4: //星星：升级
 					Player1.LevelUp();
@@ -2940,7 +3409,7 @@ void GS::CheckAwardCollision()
 					FortifyEndTime = GetTickCount() + 20000;
 					break;
 				case 3:
-					DestroyAllEnemies();
+					DestroyAllEnemies(1); //P2得分
 					break;
 				case 4:
 					player2.LevelUp();
@@ -2959,11 +3428,13 @@ void GS::CheckAwardCollision()
 }
 
 //炸弹效果：消灭所有屏幕上的敌人
-void GS::DestroyAllEnemies()
+void GS::DestroyAllEnemies(int scorer)
 {
 	EnemyList*ep = enemylisthead.next;
 	while (ep != NULL)
 	{
+		RecordKill(scorer, ep->enemy->Grade);
+		if (ep->enemy->IsBossEnemy) BossActive = false;
 		CreateBoom(ep->enemy->player.x, ep->enemy->player.y, 2, ep->enemy->Dir);
 		AddUselessObj(ep->enemy->ID);
 		EnemyNumber--;
