@@ -1,9 +1,9 @@
-#include "GamingScene.h"
+﻿#include "GamingScene.h"
 #define EnemyNumberMAX 21
 namespace GS {
 	LPDIRECT3DSURFACE9 GrayRect = NULL;
 	LPDIRECT3DSURFACE9 BlackRect = NULL;
-	/*����*/
+	/*贴图*/
 	LPDIRECT3DTEXTURE9 Flag = NULL;
 	LPDIRECT3DTEXTURE9 Something = NULL;
 	LPDIRECT3DTEXTURE9 Tile = NULL;
@@ -19,7 +19,7 @@ namespace GS {
 	LPDIRECT3DTEXTURE9 Hole = NULL;
 	LPDIRECT3DTEXTURE9 Number = NULL;
 	LPDIRECT3DTEXTURE9 Flicker[9] = { NULL };
-	/*����*/
+	/*变量*/
 	vector<int> BornPlayer1MapPiece;
 	vector<int> BornPlayer2MapPiece;
 	vector<int> BornEnemyMapPiece;
@@ -38,13 +38,13 @@ namespace GS {
 	int FlagGameX = (6 + 1) * 64; // 448
 	int FlagGameY = (12 + 1) * 64; // 832
 	bool BaseDestroyed = false; //基地是否被击毁
-	/*����*/
+	/*对象*/
 	Player player;
 	Player2 player2;
 	Player &Player1 = player;
 	void ShowGameOver();
 
-	/*���ߺ���*/
+	/*辅助函数*/
 	int  Crash(int iswho, int x, int y, int speed, int dir, int shooter, unsigned long id, int, int powerLevel);
 	void DrawMap();
 	void CreateMapPiece();
@@ -52,11 +52,11 @@ namespace GS {
 	bool ReadMapInHD(char * filename);
 	bool WriteMapToHD(char * filename);
 	void FillRect(RECT & rect, long l, long r, long t, long b);
-	void ReadMap(int x, int y, RECT&rect1, RECT&rect2);//��ȡ��ͼ��Ϣ
+	void ReadMap(int x, int y, RECT&rect1, RECT&rect2);//读取地图信息
 	void AddUselessObj(unsigned long id);
-	bool DelListNode(EnemyList*listhead, unsigned long id);//ɾ���ɹ�����true�����򷵻�false
-	bool DelListNode(BulletList*listhead, unsigned long id);//ɾ���ɹ�����true�����򷵻�false
-	bool DelListNode(BoomList*listhead, unsigned long id);//ɾ���ɹ�����true�����򷵻�false
+	bool DelListNode(EnemyList*listhead, unsigned long id);//删除成功返回true，否则返回false
+	bool DelListNode(BulletList*listhead, unsigned long id);//删除成功返回true，否则返回false
+	bool DelListNode(BoomList*listhead, unsigned long id);//删除成功返回true，否则返回false
 	void DelUselessObj();
 	void DrawNet();
 	void ClearUselessObj();
@@ -73,29 +73,29 @@ namespace GS {
 	void ReadNextMap();
 	void StartNextStage();
 	void RestartThisStage();
-	/*���ߺ���*/
-	BulletListHead bulletlisthead;//�ӵ�����ͷ
-	EnemyListHead enemylisthead;//��������ͷ
-	UselessObjHead uselessobjhead;//ʧЧ��������ͷ
-	BoomListHead boomlisthead;//��ը����ͷ
+	/*辅助函数*/
+	BulletListHead bulletlisthead;//子弹链表头
+	EnemyListHead enemylisthead;//敌人链表头
+	UselessObjHead uselessobjhead;//失效对象链表头
+	BoomListHead boomlisthead;//爆炸链表头
 	MapPieceListHead mappiecelisthead;
 	AwardItemListHead awardlisthead;
 
 	static unsigned long IDNumber = 0;
-	int EnemyXY[EnemyNumberMAX][2];//����λ�������
-	int Map[13][13]; //��һ����y�ᣬ�ڶ�����x��
+	int EnemyXY[EnemyNumberMAX][2];//敌人位置坐标数组
+	int Map[13][13]; //第一维是y轴，第二维是x轴
 }
 using namespace GS;
 /*--------------------------------------------------------------------
-GamingScene�ķ���
+GamingScene的方法
 ----------------------------------------------------------------------*/
-//������ʼ��
+//变量初始化
 bool GamingScene::Init()
 {
 	//
 	srand((unsigned)time(0));
 
-	for (int i = 0; i < EnemyNumberMAX; i++)//��ʼ�����������
+	for (int i = 0; i < EnemyNumberMAX; i++)//初始化敌人坐标数组
 	{
 		EnemyXY[i][0] = -1;
 		EnemyXY[i][1] = -1;
@@ -112,7 +112,7 @@ bool GamingScene::Init()
 	
 	if (result != D3D_OK)
 	{
-		ShowMessage("��ɫ-���� ��ʼ��ʧ�ܣ�");
+		ShowMessage("灰色-区域 初始化失败！");
 		return false;
 	}
 
@@ -126,7 +126,7 @@ bool GamingScene::Init()
 	);
 	if (result != D3D_OK)
 	{
-		ShowMessage("��ɫ-���� ��ʼ��ʧ�ܣ�");
+		ShowMessage("黑色-区域 初始化失败！");
 		return false;
 	}
 	d3dDev->ColorFill(GrayRect, NULL, D3DCOLOR_XRGB(110, 110, 110));
@@ -135,89 +135,89 @@ bool GamingScene::Init()
 	Flag = LoadTexture(Resource::Texture::Flag, D3DCOLOR_XRGB(255, 255, 255));
 	if (!Flag)
 	{
-		ShowMessage("װ�� ���� ����ʧ�ܣ�");
+		ShowMessage("装载 旗帜 纹理失败！");
 		return false;
 	}
 	Something = LoadTexture(Resource::Texture::Something, D3DCOLOR_XRGB(255, 255, 255));
 	if (!Something)
 	{
-		ShowMessage("װ�� ���� ����ʧ��!");
+		ShowMessage("装载 其他 纹理失败!");
 		return false;
 	}
 	Tile = LoadTexture(Resource::Texture::Tile, D3DCOLOR_XRGB(4, 4, 4));
 	if (!Tile)
 	{
-		ShowMessage("װ�� ש ����ʧ��!");
+		ShowMessage("装载 砖 纹理失败!");
 		return false;
 	}
 	Player_1 = LoadTexture(Resource::Texture::Player_1, D3DCOLOR_XRGB(0, 0, 0));
 	if (!Player_1)
 	{
-		ShowMessage("װ�� ����� ����ʧ��!");
+		ShowMessage("装载 玩家一 纹理失败!");
 		return false;
 	}
 	Bullet_TXTTURE = LoadTexture(Resource::Texture::Bullet, D3DCOLOR_XRGB(4, 4, 4));
 	if (!Bullet_TXTTURE)
 	{
-		ShowMessage("װ�� �ӵ� ����ʧ��!");
+		ShowMessage("装载 子弹 纹理失败!");
 		return false;
 	}
 	Boom1 = LoadTexture(Resource::Texture::Boom1, D3DCOLOR_XRGB(0, 0, 0));
 	if (!Boom1)
 	{
-		ShowMessage("װ�� ��ըһ ����ʧ��!");
+		ShowMessage("装载 爆炸一 纹理失败!");
 		return false;
 	}
 	Boom2 = LoadTexture(Resource::Texture::Boom2, D3DCOLOR_XRGB(4, 4, 4));
 	if (!Boom2)
 	{
-		ShowMessage("װ�� ��ը�� ����ʧ��!");
+		ShowMessage("装载 爆炸二 纹理失败!");
 		return false;
 	}
 	Player_2 = LoadTexture(Resource::Texture::Player_2, D3DCOLOR_XRGB(0, 0, 0));
 	if (!Player_2)
 	{
-		ShowMessage("װ�� ��Ҷ� ����ʧ��!");
+		ShowMessage("装载 玩家二 纹理失败!");
 		return false;
 	}
 	Award = LoadTexture(Resource::Texture::Award, D3DCOLOR_XRGB(234, 234, 234));
 	if (!Award)
 	{
-		ShowMessage("װ�� ���� ����ʧ��!");
+		ShowMessage("装载 奖励 纹理失败!");
 		return false;
 	}
 	Shield = LoadTexture(Resource::Texture::Shield, D3DCOLOR_XRGB(234, 234, 234));
 	if (!Shield)
 	{
-		ShowMessage("װ�� ���� ����ʧ��!");
+		ShowMessage("装载 盾牌 纹理失败!");
 		return false;
 	}
 	GameOver = LoadTexture(Resource::Texture::GameOver, D3DCOLOR_XRGB(0, 0, 0));
 	if (!GameOver)
 	{
-		ShowMessage("װ�� ��Ϸ���� ����ʧ��!");
+		ShowMessage("装载 游戏结束 纹理失败!");
 		return false;
 	}
 	Enemy_TXTTURE = LoadTexture(Resource::Texture::Enemy, D3DCOLOR_XRGB(4, 4, 4));
 	if (!Enemy_TXTTURE)
 	{
-		ShowMessage("װ�� ���� ����ʧ��!");
+		ShowMessage("装载 敌人 纹理失败!");
 		return false;
 	}
 	Hole = LoadTexture(Resource::Texture::Hole, D3DCOLOR_XRGB(4, 4, 4));
 	if (!Hole)
 	{
-		ShowMessage("װ�� �� ����ʧ��!");
+		ShowMessage("装载 洞 纹理失败!");
 		return false;
 	}
 	Number = LoadTexture(Resource::Texture::Number, D3DCOLOR_XRGB(255, 255, 255));
 	if (!Number)
 	{
-		ShowMessage("װ�� ���� ����ʧ��!");
+		ShowMessage("装载 数字 纹理失败!");
 		return false;
 	}
 
-	//װ������
+	//装载动画
 	string png = ".png";
 	string path = "Resources\\Texture\\";
 	string buf;
@@ -231,7 +231,7 @@ bool GamingScene::Init()
 			ShowMessage(buf);
 	}
 	RECT rect;
-	int n = 0, i = 960;//���۴��ڴ�С����Ϸ�ֱ������ǲ���
+	int n = 0, i = 960;//不管窗口大小，游戏分辨率都是不变的
 	int delayOld = GetTickCount();
 	d3dDev->BeginScene();
 	for (; n < Global::Window::ScreenHeight / 2; n += 8, i -= 8)
@@ -254,16 +254,16 @@ bool GamingScene::Init()
 		}
 		*/
 	}
-	//����ѡ��ؿ�
+	//加载选择关卡
 	if (Global::DesignMap::NewMapName.length() != 0)
 		ReadMapInHD(Global::DesignMap::NewMapName);
 	else
 		ReadMapInHD("stage" + std::to_string(NowLevel));
-	//��ȡ��ͼ��Ϣ��������ͼ��
+	//读取地图信息，创建地图块
 	CreateMapPiece();
-	//�ж��Ƿ�˫����Ϸ
+	//判断是否双人游戏
 	IsDoublePlayer = Global::Home::selectedType == 1 ? true : false;
-	//���ſ�ʼ����
+	//播放开始音效
 	if(Global::Sound::SoundSwicth)
 	Sound::Start->Play();
 	player.Born();
@@ -274,7 +274,7 @@ bool GamingScene::Init()
 
 void GamingScene::End()
 {
-	//�����ͼ��
+	//清理地图块
 	MapPieceList*buf;
 	MapPieceList*mp = mappiecelisthead.next;
 	for (int i = 0; i < 13; i++)
@@ -293,21 +293,21 @@ void GamingScene::End()
 			}
 		}
 	mappiecelisthead.next = NULL;
-	//�������
+	//清理敌人
 	EnemyList* ep = enemylisthead.next;
 	while (ep != NULL)
 	{
 		AddUselessObj(ep->enemy->ID);
 		ep = ep->next;
 	}
-	//����ӵ�
+	//清理子弹
 	BulletList*bp = bulletlisthead.next;
 	while (bp != NULL)
 	{
 		AddUselessObj(bp->bullet->ID);
 		bp = bp->next;
 	}
-	//�����ը
+	//清理爆炸
 	BoomList*boomp = boomlisthead.next;
 	while (boomp != NULL)
 	{
@@ -344,7 +344,7 @@ void GamingScene::End()
 		player2.Grade = 0;
 		player2.ApplyGradeStats();
 	}
-	//���õ�ͼ����
+	//重置地图数据
 	SGOy = 960;
 	GameOverFlag = false;
 	BaseDestroyed = false;
@@ -373,14 +373,14 @@ void GamingScene::End()
 	if (Sound::Moving->IsSoundPlaying()) Sound::Moving->Stop();
 	if (Sound::BGM->IsSoundPlaying()) Sound::BGM->Stop();
 }
-//��Ϸ��Ⱦ
+//游戏渲染
 void GamingScene::Render()
 {
 	d3dDev->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
 
-	/*��Ϸ�߿�*/
+	/*游戏边框*/
 	RECT rect;
-	FillRect(rect, 0, 1024, 32, 64);   //�ֱ��ʲ�Ϊ1024*960ʱ��Ҫ�޸�
+	FillRect(rect, 0, 1024, 32, 64);   //分辨率不为1024*960时需要修改
 	d3dDev->StretchRect(GrayRect, NULL, backBuffer, &rect, D3DTEXF_NONE);
 	FillRect(rect, 0, 64, 64, 896);
 	d3dDev->StretchRect(GrayRect, NULL, backBuffer, &rect, D3DTEXF_NONE);
@@ -389,8 +389,8 @@ void GamingScene::Render()
 	FillRect(rect, 0, 1024, 896, 928);
 	d3dDev->StretchRect(GrayRect, NULL, backBuffer, &rect, D3DTEXF_NONE);
 
-	DrawNet();//��������ʽ��ɾ��
-			  /*��Ϸ����*/
+	DrawNet();//正式版正式删除
+			  /*游戏内容*/
 	spriteObj->Begin(D3DXSPRITE_ALPHABLEND);
 	//侧栏旗帜图标（UI装饰）
 	Sprite_Transform_Draw(Flag, 926, 704, 32, 32, 0, 1, 0, 2.0, D3DCOLOR_XRGB(255, 255, 255));
@@ -403,26 +403,26 @@ void GamingScene::Render()
 		int shieldFrame = (GetTickCount() / 100) % 2;
 		Sprite_Transform_Draw(Shield, FlagGameX, FlagGameY, 32, 32, shieldFrame, 1, 0, 2.0f, D3DCOLOR_XRGB(255, 255, 255));
 	}
-	//���һ����Ϣ
+	//玩家一的信息
 	Sprite_Transform_Draw(Something, 928, 512, 14, 14, 2, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
 	Sprite_Transform_Draw(Something, 960, 512, 14, 14, 3, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
 	Sprite_Transform_Draw(Something, 928, 544, 14, 14, 1, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-	//��Ҷ�����Ϣ
+	//玩家二的信息
 	if (IsDoublePlayer) {
 		Sprite_Transform_Draw(Something, 928, 608, 14, 14, 4, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
 		Sprite_Transform_Draw(Something, 960, 608, 14, 14, 3, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
 		Sprite_Transform_Draw(Something, 928, 640, 14, 14, 1, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
 	}
-	//�����һ
+	//画玩家一
 	if(player.Alive)
 	player.Draw();
-	//����Ҷ�
+	//画玩家二
 	if (player2.Alive)
 	{
 		if (IsDoublePlayer)
 			player2.Draw();
 	}
-	//����ͼ
+	//画地图
 	MapPieceList* mp = mappiecelisthead.next;
 	while (mp != NULL)
 	{
@@ -431,7 +431,7 @@ void GamingScene::Render()
 	}
 	//	DrawMap();
 	//		Sprite_Transform_Draw(Tile, 512, 832, 32, 32, 5, 7, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-	//��Ⱦ�ӵ� �������ʧЧ�ӵ�
+	//渲染子弹 并清理失效子弹
 	BulletList*bp = bulletlisthead.next;
 	while (bp != NULL)
 	{
@@ -439,7 +439,7 @@ void GamingScene::Render()
 		bp = bp->next;
 	}
 
-	//��Ⱦ����
+	//渲染敌人
 	EnemyList *ep = enemylisthead.next;
 	while (ep != NULL)
 	{
@@ -447,7 +447,7 @@ void GamingScene::Render()
 		ep = ep->next;
 	}
 
-	//��Ⱦ��ը
+	//渲染爆炸
 	BoomList *pboom = boomlisthead.next, *bbuf;
 	while (pboom != NULL)
 	{
@@ -461,14 +461,14 @@ void GamingScene::Render()
 		paw->award->Draw();
 		paw = paw->next;
 	}
-	//��Ϸ����
+	//游戏结束
 	if (GameOverFlag)
 	{
 		ShowGameOver();
 	}
-	DIDA();//����ʱ����Ϣ
+	DIDA();//处理时间相关信息
 }
-//��Ϸ�߼�����
+//游戏逻辑更新
 void GamingScene::Update()
 {
 	unsigned long newtime;
@@ -489,39 +489,39 @@ void GamingScene::Update()
 			}
 	}
 	if (!GameOverFlag) {
-		//���������� �ж��Ƿ�ʤ��
+		//检查敌人数量 判断是否胜利
 		if (EnemyNumber <= 0)
 		{
 			StartNextStage();
 		}
-		//���һ
+		//玩家一
 		if (player.Alive)
 		{
-			if (KEY_DOWN(Global::PlayerControl::Player1[0]) && !KEY_DOWN(Global::PlayerControl::Player1[3]) && !KEY_DOWN(Global::PlayerControl::Player1[2]))
+			if (Key_Down(Global::PlayerControl::Player1[0]) && !Key_Down(Global::PlayerControl::Player1[3]) && !Key_Down(Global::PlayerControl::Player1[2]))
 			{
 				player.Logic(Dirction::up);
 				//up
 			}
-			if (KEY_DOWN(Global::PlayerControl::Player1[1]) && !KEY_DOWN(Global::PlayerControl::Player1[3]) && !KEY_DOWN(Global::PlayerControl::Player1[2]))
+			if (Key_Down(Global::PlayerControl::Player1[1]) && !Key_Down(Global::PlayerControl::Player1[3]) && !Key_Down(Global::PlayerControl::Player1[2]))
 			{
 				player.Logic(Dirction::below);
 				//blow
 			}
-			if (KEY_DOWN(Global::PlayerControl::Player1[2]))
+			if (Key_Down(Global::PlayerControl::Player1[2]))
 			{
 				player.Logic(Dirction::lift);
 				//left
 			}
-			if (KEY_DOWN(Global::PlayerControl::Player1[3]))
+			if (Key_Down(Global::PlayerControl::Player1[3]))
 			{
 				player.Logic(Dirction::right);
 				//right
 			}
-			//������
+			//射击键
 			static int ShootTime = 10;
 			if (ShowTime)
 				ShootTime++;
-			if (KEY_DOWN(Global::PlayerControl::Player1[4]) || KEY_DOWN(VK_NUMPAD0))
+			if (Key_Down(Global::PlayerControl::Player1[4]) || Key_Down(0x52))
 			{
 
 				if (ShootTime > 10 / player.Attack_Speed)
@@ -535,7 +535,7 @@ void GamingScene::Update()
 		//Player1 movement sound
 		if (Global::Sound::SoundSwicth && player.Alive)
 		{
-			bool isMoving = KEY_DOWN(Global::PlayerControl::Player1[0]) || KEY_DOWN(Global::PlayerControl::Player1[1]) || KEY_DOWN(Global::PlayerControl::Player1[2]) || KEY_DOWN(Global::PlayerControl::Player1[3]);
+			bool isMoving = Key_Down(Global::PlayerControl::Player1[0]) || Key_Down(Global::PlayerControl::Player1[1]) || Key_Down(Global::PlayerControl::Player1[2]) || Key_Down(Global::PlayerControl::Player1[3]);
 			if (isMoving && !Sound::Moving->IsSoundPlaying())
 				Sound::Moving->Play(0, DSBPLAY_LOOPING);
 			else if (!isMoving && Sound::Moving->IsSoundPlaying())
@@ -544,36 +544,36 @@ void GamingScene::Update()
 				Sound::Stop->Play();
 			}
 		}
-		//��Ҷ�
+		//玩家二
 		static int ShootTime2 = 10;
 		if (player2.Alive)
 		{
 			if (IsDoublePlayer)
 			{
-				if (KEY_DOWN(Global::PlayerControl::Player2[0]) && !KEY_DOWN(Global::PlayerControl::Player2[3]) && !KEY_DOWN(Global::PlayerControl::Player2[2]))
+				if (Key_Down(Global::PlayerControl::Player2[0]) && !Key_Down(Global::PlayerControl::Player2[3]) && !Key_Down(Global::PlayerControl::Player2[2]))
 				{
 					player2.Logic(Dirction::up);
 					//up
 				}
-				if (KEY_DOWN(Global::PlayerControl::Player2[1]) && !KEY_DOWN(Global::PlayerControl::Player2[3]) && !KEY_DOWN(Global::PlayerControl::Player2[2]))
+				if (Key_Down(Global::PlayerControl::Player2[1]) && !Key_Down(Global::PlayerControl::Player2[3]) && !Key_Down(Global::PlayerControl::Player2[2]))
 				{
 					player2.Logic(Dirction::below);
 					//blow
 				}
-				if (KEY_DOWN(Global::PlayerControl::Player2[2]))
+				if (Key_Down(Global::PlayerControl::Player2[2]))
 				{
 					player2.Logic(Dirction::lift);
 					//left
 				}
-				if (KEY_DOWN(Global::PlayerControl::Player2[3]))
+				if (Key_Down(Global::PlayerControl::Player2[3]))
 				{
 					player2.Logic(Dirction::right);
 					//right
 				}
-				//������
+				//射击键
 				if (ShowTime)
 					ShootTime2++;
-				if (KEY_DOWN(Global::PlayerControl::Player2[4]))
+				if (Key_Down(Global::PlayerControl::Player2[4]))
 				{
 					if (ShootTime2 > 10 / player2.Attack_Speed)
 					{
@@ -583,14 +583,14 @@ void GamingScene::Update()
 				}
 			}
 		}
-		//�����ӵ��߼�
+		//更新子弹逻辑
 		BulletList*bp = bulletlisthead.next;
 		while (bp != NULL)
 		{
 			bp->bullet->Logic();
 			bp = bp->next;
 		}
-		//���µ����߼�
+		//更新敌人逻辑
 		EnemyList*ep = enemylisthead.next;
 		bool enemiesFrozen = (int)GetTickCount() < FreezeEndTime;
 		while (ep != NULL)
@@ -599,19 +599,19 @@ void GamingScene::Update()
 				ep->enemy->Logic(ShowTime);
 			ep = ep->next;
 		}
-		//�����µ���
-		static int BornEnemy = 30;//���ɵ��˼�ʱ��
+		//生成新敌人
+		static int BornEnemy = 30;//生成敌人计时器
 		static int NeedBornEnemy = 1;
 		if (NeedBornEnemy)
-			if (ShowTime)//ShowTime 100msһ��
+		if (ShowTime)//ShowTime 100ms一次
 				BornEnemy++;
-		if (BornEnemy >= 10)//�����µĵ���
+		if (BornEnemy >= 10)//生成新的敌人
 		{
 			if (HaveBornEnemyNumber > 30)
 				NeedBornEnemy = 0;
 			if (BornEnemyMapPiece.size() != 0)
 			{
-				//���ݵ������ɵ���������ɵ���
+				//根据地图生成地点随机生成敌人
 				int atbuf= rand() % (BornEnemyMapPiece.size() / 2);
 				CreateEnemy((BornEnemyMapPiece.at(atbuf*2)+1) * 64,
 					(BornEnemyMapPiece.at(atbuf*2+1)+1) * 64,
@@ -629,7 +629,7 @@ void GamingScene::Update()
 			//	CreateEnemy(4 * 64, 3 * 64, 10, 1, 1, rand() % 7, rand() % 4);
 			BornEnemy = 0;
 		}
-		//���±�ը�߼�
+		//更新爆炸逻辑
 		BoomList*boomp = boomlisthead.next;
 		while (boomp != NULL)
 		{
@@ -638,7 +638,7 @@ void GamingScene::Update()
 		}
 		//检测奖励碰撞
 		CheckAwardCollision();
-		//�ж����Ѫ���Ծ�����Ϸ״̬
+		//判断玩家血量以决定游戏状态
 		if (!IsDoublePlayer)
 		{
 			if (player.Health_Point <= 0)
@@ -648,7 +648,7 @@ void GamingScene::Update()
 					player.Alive = false;
 				else
 					Player1.Born();
-				//������ը
+				//创建爆炸
 				CreateBoom(player.player.x,player.player.y, 2, player.Dir);
 			}
 			if (player.Lift <= 0)
@@ -667,7 +667,7 @@ void GamingScene::Update()
 						player.Alive = false;
 					else
 						Player1.Born();
-					//������ը
+					//创建爆炸
 					CreateBoom(player.player.x, player.player.y, 2, player.Dir);
 				}
 			}
@@ -679,7 +679,7 @@ void GamingScene::Update()
 					if (player2.Lift <= 0)
 						player2.Alive = false;
 					else
-						//������ը
+						//创建爆炸
 						CreateBoom(player2.player.x, player2.player.y, 2, player2.Dir);
 					player2.Born();
 				}
@@ -690,9 +690,9 @@ void GamingScene::Update()
 			}
 
 		}
-		//���ʧЧ����
+		//清理失效对象
 		ClearUselessObj();
-		//��ȡʱ����� 
+		//获取时间相关
 	}
 	else
 	{
@@ -707,14 +707,14 @@ void GamingScene::Update()
 	lasttime = GetTickCount();
 }
 /*--------------------------------------------------------------------
-GamingScene�ķ������˽���
+GamingScene的方法到此结束
 ----------------------------------------------------------------------*/
 
 
 /*--------------------------------------------------------------------
-GameScene�ķ���
+GameScene的方法
 ----------------------------------------------------------------------*/
-//��Ϸ��������
+//游戏结束画面
 void GS::ShowGameOver()
 	{
 		static int oldtime = GetTickCount();
@@ -732,15 +732,15 @@ void GS::ShowGameOver()
 				0, 1, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
 
 	}
-//ר�ŷ�����bullet::logic����ײ��⺯��
+//专门服务于bullet::logic的碰撞检测函数
 int  GS::Crash(int iswho, int x, int y, int speed, int dir, 
 	           int shooter, unsigned long id, int movedmixel, int powerLevel) {
-		//��ͼ�߽�
+		//地图边界
 		static  RECT MapEdgeTop = { 0,0,1024,64 },
 			MapEdgeBelow = { 0,896,1024,960 },
 			MapEdgeLeft = { 0,0,64,960 },
 			MapEdgeRight = { 896,0,1024,960 };
-		//�ȼ���ӵ��Ƿ���ײ������
+		//先检测子弹是否碰撞到敌人
 		RECT BulletRect;
 		switch (dir)
 		{
@@ -795,7 +795,7 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 				ep = ep->next;
 			}
 		}
-		//�������ӵ��Ƿ��������
+		//检测敌人子弹是否命中玩家
 		RECT PlayerRect;
 		if (shooter == 2)
 		{
@@ -828,7 +828,7 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 				}
 			}
 		}
-		//����ӵ���ײ
+		//子弹子弹碰撞
 		BulletList*bp = bulletlisthead.next;
 		RECT BulletRectTest;
 		while (bp != NULL)
@@ -868,10 +868,10 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 		}
 		ep = ep->next;
 		}
-		return 2;//ĿǰΪ����״̬ ��ʽ��ӦΪ��ը2
+		return 2;//目前为调试状态 正式版应为爆炸2
 		}
 		}*/
-		//����Ƿ���ײ��ש��
+		//检测是否碰撞到砖墙
 		//	int x1 = x - 20, y1 = y - 20;
 		int X1, Y1, X2, Y2;
 		switch (dir)
@@ -999,7 +999,7 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 		}
 		return 0;
 	}
-//��Ϸ��ͼ�滭����       
+//游戏地图绘画方法
 void GS::DrawMap()
 	{
 		for (int i = 0; i < 13; i++)
@@ -1100,26 +1100,26 @@ void GS::DrawMap()
 				}
 			}
 	}
-//������ͼ����
+//创建地图方块
 void GS::CreateMapPiece()
 	{
 		for (int x = 0; x < 13; x++)
 			for (int y = 0; y < 13; y++) {
 
 				if (Map[y][x] != 0) {
-					//��¼���һ�ĳ����ص�
+					//记录玩家一的出生坐标点
 					if (Map[y][x] == 31)
 					{
 						BornPlayer1MapPiece.push_back(x);
 						BornPlayer1MapPiece.push_back(y);
 					}
-					//��¼��Ҷ��ĳ����ص�
+					//记录玩家二的出生坐标点
 					if (Map[y][x] == 32)
 					{
 						BornPlayer2MapPiece.push_back(x);
 						BornPlayer2MapPiece.push_back(y);
 					}
-					//��¼���˵ĳ����ص�
+					//记录敌人的出生坐标点
 					if (Map[y][x] == 33)
 					{
 						BornEnemyMapPiece.push_back(x);
@@ -1132,7 +1132,7 @@ void GS::CreateMapPiece()
 					b->X = x;
 					b->Y = y;
 					b->Create(Map[y][x]);
-					//���µ�ͼ�����ӵ�����
+					//更新地图，将新方块加入链表
 					if (h == NULL)
 					{
 						mappiecelisthead.next = New;
@@ -1158,7 +1158,7 @@ void GS::CreateMapPiece()
 				}
 			}
 	}
-//��ȡӲ���ϵ�ͼ����Ϣ
+//读取硬盘上地图文件信息
 bool GS::ReadMapInHD(string filename)
 {
 	char buf[13][13];
@@ -1172,13 +1172,13 @@ bool GS::ReadMapInHD(string filename)
 		//ShowMessage("sd");
 		return false;
 	}
-	//���ļ��ж�ȡ��ͼ��Ϣ
+	//从文件中读取地图信息
 	for (int i = 0; i < 13; i++)
 		for (int j = 0; j < 13; j++)
 		{
 			in.read(&buf[i][j], 1);
 		}
-	//ת��Ϊ��ǰ��ͼ
+	//转换为当前地图
 	for (int i = 0; i < 13; i++)
 		for (int j = 0; j < 13; j++)
 		{
@@ -1199,13 +1199,13 @@ bool GS::ReadMapInHD(char*filename)
 		{
 			ShowMessage(sbuf);
 		}
-		//���ļ��ж�ȡ��ͼ��Ϣ
+		//从文件中读取地图信息
 		for (int i = 0; i < 13; i++)
 			for (int j = 0; j < 13; j++)
 			{
 				in.read(&buf[i][j], 1);
 			}
-		//ת��Ϊ��ǰ��ͼ
+		//转换为当前地图
 		for (int i = 0; i < 13; i++)
 			for (int j = 0; j < 13; j++)
 			{
@@ -1214,7 +1214,7 @@ bool GS::ReadMapInHD(char*filename)
 
 		return 0;
 	}
-//д��ǰ��ͼ��Ϣ��Ӳ��
+//写当前地图信息到硬盘
 bool GS::WriteMapToHD(char*filename)
 	{
 		char buf;
@@ -1232,7 +1232,7 @@ bool GS::WriteMapToHD(char*filename)
 		return 0;
 	}
 
-//������ը
+//创建爆炸
 void GS::CreateBoom(int x, int y, int whatboom, int Dir)
 	{
 		BoomFire*b = new BoomFire(x, y, whatboom, Dir);
@@ -1265,14 +1265,14 @@ void GS::CreateBoom(int x, int y, int whatboom, int Dir)
 		}
 
 	}
-//��������
+//创建敌人
 void GS::CreateEnemy(int x, int y, int speed, int hp,
 	                 int as, int grade, int dir)
 	{
 		int NewEnemyX = x;
 		int NewEnemyY = y;
 
-		//���ɵ��˶���
+		//生成敌人对象
 		Enemy*e = new Enemy(NewEnemyX, NewEnemyY, speed, hp, as, grade, dir);
 		IDNumber++;
 		e->ID = IDNumber;
@@ -1306,8 +1306,8 @@ void GS::CreateEnemy(int x, int y, int speed, int hp,
 		}
 
 	}
-/*���ߺ���*/
-//���RECT
+/*辅助函数*/
+//填充RECT
 void GS::FillRect(RECT&rect, long l = -1, long r = -1, 
 	              long t = -1, long b = -1)
 	{
@@ -1316,7 +1316,7 @@ void GS::FillRect(RECT&rect, long l = -1, long r = -1,
 		rect.top = t;
 		rect.bottom = b;
 	}
-//��ȡ��ͼ��Ϣ
+//读取地图信息
 void GS::ReadMap(int x, int y, RECT&rect1, RECT&rect2)
 	{
 		switch (Map[y][x])
@@ -1401,7 +1401,7 @@ void GS::ReadMap(int x, int y, RECT&rect1, RECT&rect2)
 			break;
 		}
 	}
-//����������
+//绘制网格线
 void GS::DrawNet()
 	{
 		RECT rect;
@@ -1417,11 +1417,11 @@ void GS::DrawNet()
 			d3dDev->StretchRect(BlackRect, NULL, backBuffer, &rect, D3DTEXF_NONE);
 		}
 	}
-//���ʧЧ����
+//清理失效对象
 void GS::ClearUselessObj()
 	{
 		UselessObj*up = uselessobjhead.next;
-		//���ʧЧ�ӵ�
+		//清理失效子弹
 		BulletList*b = bulletlisthead.next;
 		while (up != NULL)
 		{
@@ -1445,7 +1445,7 @@ void GS::ClearUselessObj()
 				up = up->next;
 		}
 	
-		//���ʧЧ���˲����챬ը
+		//清理失效敌人并创建爆炸
 		up = uselessobjhead.next;
 		EnemyList*ep = enemylisthead.next;
 		while (up != NULL)
@@ -1471,7 +1471,7 @@ void GS::ClearUselessObj()
 		up = up->next;
 		}
 
-		//���ʧЧ��ը
+		//清理失效爆炸
 		up = uselessobjhead.next;
 		BoomList*bp = boomlisthead.next;
 		while (up != NULL)
@@ -1530,7 +1530,7 @@ void GS::AddUselessObj(unsigned long id)
 		p->ID = id;
 		uselessobjhead.next = p;
 	}
-//ɾ������Ԫ��
+//删除单个元素
 void GS::DelUselessObj()
 	{
 		UselessObj*p = uselessobjhead.next;
@@ -1539,7 +1539,7 @@ void GS::DelUselessObj()
 		delete p;
 	}
 
-bool GS::DelListNode(EnemyList*listhead, unsigned long id)//ɾ���ɹ�����true�����򷵻�false
+bool GS::DelListNode(EnemyList*listhead, unsigned long id)//删除成功返回true，否则返回false
 	{
 		EnemyList*p = listhead;
 		while (p != NULL)
@@ -1573,7 +1573,7 @@ bool GS::DelListNode(EnemyList*listhead, unsigned long id)//ɾ���ɹ���
 		return false;
 	}
 
-bool GS::DelListNode(BulletList*listhead, unsigned long id)//ɾ���ɹ�����true�����򷵻�false
+bool GS::DelListNode(BulletList*listhead, unsigned long id)//删除成功返回true，否则返回false
 	{
 		BulletList*p = listhead;
 		while (p != NULL)
@@ -1607,7 +1607,7 @@ bool GS::DelListNode(BulletList*listhead, unsigned long id)//ɾ���ɹ��
 		return false;
 	}
 
-bool GS::DelListNode(BoomList*listhead, unsigned long id)//ɾ���ɹ�����true�����򷵻�false
+bool GS::DelListNode(BoomList*listhead, unsigned long id)//删除成功返回true，否则返回false
 	{
 		BoomList*p = listhead;
 		while (p != NULL)
@@ -1640,7 +1640,7 @@ bool GS::DelListNode(BoomList*listhead, unsigned long id)//ɾ���ɹ���
 		}
 		return false;
 	}
-//����ʱ������
+//处理时间相关
 void GS::DIDA() {
 		NowTime = (int)GetTickCount();
 		if (NowTime > StartTime + 100)
@@ -1654,7 +1654,7 @@ void GS::DIDA() {
 
 void GS::NewStage()
 {
-	//�����ͼ��
+	//清理地图块
 	MapPieceList*buf;
 	MapPieceList*mp = mappiecelisthead.next;
 	for (int i = 0; i < 13; i++)
@@ -1673,21 +1673,21 @@ void GS::NewStage()
 			}
 		}
 	mappiecelisthead.next = NULL;
-	//�������
+	//清理敌人
 	EnemyList* ep = enemylisthead.next;
 	while (ep != NULL)
 	{
 		AddUselessObj(ep->enemy->ID);
 		ep = ep->next;
 	}
-	//����ӵ�
+	//清理子弹
 	BulletList*bp = bulletlisthead.next;
 	while (bp != NULL)
 	{
 		AddUselessObj(bp->bullet->ID);
 		bp = bp->next;
 	}
-	//�����ը
+	//清理爆炸
 	BoomList*boomp = boomlisthead.next;
 	while (boomp != NULL)
 	{
@@ -1726,7 +1726,7 @@ void GS::NewStage()
 		player2.Health_Point = 1;
 		player2.ApplyGradeStats();
 	}
-	//���õ�ͼ����
+	//重置地图数据
 	SGOy = 960;
 	GameOverFlag = false;
 	BaseDestroyed = false;
@@ -1777,10 +1777,10 @@ void GS::RestartThisStage()
 	CreateMapPiece();
 }
 /*--------------------------------------------------------------------
-GameScene�ķ������˽���
+GameScene的方法到此结束
 ----------------------------------------------------------------------*/
 
-//����AI
+//敌人AI
 int* idiot(int state, bool cflag)
 {
 	static int a[2];
@@ -1789,7 +1789,7 @@ int* idiot(int state, bool cflag)
 		if ((rand() % 5) == 1)
 		{
 			a[0] = state;
-			a[1] = 1;//����
+		a[1] = 1;//射击
 			return a;
 		}
 		a[0] = rand() % 4;
@@ -1814,7 +1814,7 @@ int* idiot(int state, bool cflag)
 	return a;
 
 }
-//���˵Ĺ��캯��
+//敌人的构造函数
 Enemy::Enemy(int x, int y, int speed, int hp,
 	         int as,int grade,int dir)
 {
@@ -1828,7 +1828,7 @@ Enemy::Enemy(int x, int y, int speed, int hp,
 	Time = 0;
 	IsFlashEnemy = false;
 }
-//���˵���Ⱦ����
+//敌人的渲染方法
 bool Enemy::Draw()
 {
 	//闪烁敌人交替使用红色调渲染
@@ -1866,7 +1866,7 @@ bool Enemy::Draw()
 		return true;
 
 }
-//�����߼�
+//敌人逻辑
 bool Enemy::Logic(bool st)
 {
 	int *a=idiot(Dir, CrashingFlag);
@@ -1916,7 +1916,7 @@ bool Enemy::Logic(bool st)
 	}
 	RECT PlayerRect = { player.x,player.y,player.x + 56,player.y + 56 };
 	RECT Rect;
-	//�͵�ͼ�����ײ���
+	//和地图方块碰撞检测
 	{
 		int X1, Y1, X2, Y2;
 		switch (d)
@@ -2120,7 +2120,7 @@ return false;
 }
 
 
-//��ը��Ⱦ����
+//爆炸渲染方法
 bool BoomFire::Draw()
 {
 
@@ -2143,7 +2143,7 @@ bool BoomFire::Draw()
 	}
 	return true;
 }
-//��ը�߼�
+//爆炸逻辑
 void BoomFire::Logic()
 {
 	if (WhatBoom == 1)
@@ -2157,7 +2157,7 @@ void BoomFire::Logic()
 	}
 	return;
 }
-//��ը���캯��
+//爆炸构造函数
 BoomFire::BoomFire(int x, int y, int wb, int d) :
 	x(x), y(y), WhatBoom(wb), Dir(d)
 {
@@ -2355,9 +2355,9 @@ void GS::DestroyAllEnemies()
 }
 
 /*--------------------------------------------------------------------
-��ҵķ���
+玩家的方法
 ----------------------------------------------------------------------*/
-//��ʼ�������Ϣ
+//初始化玩家信息
 Player::Player()
 {
 	Health_Point = 1;//血量
@@ -2418,7 +2418,7 @@ void Player::LevelUp()
 		ApplyGradeStats();
 	}
 }
-//������
+//射击方法
 bool Player::Shoot(int shooter,int powlv) {
 	Bullet*b = new Bullet(shooter,Player::player.x,Player::player.y,
 		Player::BulletSpeed, Player::Dir,powlv);
@@ -2429,7 +2429,7 @@ bool Player::Shoot(int shooter,int powlv) {
 	BulletList*c = bulletlisthead.next;
 	if (c == NULL)
 	{
-		bulletlisthead.next = new BulletList;//���ӵ������ӵ�����
+		bulletlisthead.next = new BulletList;//在子弹链表里添加子弹对象
 		bulletlisthead.next->bullet = b;
 		bulletlisthead.next->next = c;
 		bulletlisthead.next->last = NULL;
@@ -2454,7 +2454,7 @@ bool Player::Shoot(int shooter,int powlv) {
 	}
 		return true;
 }
-//�����Ⱦ����
+//玩家渲染方法
 bool Player::Draw()
 {
 	static int lasttime=GetTickCount();
@@ -2466,13 +2466,13 @@ bool Player::Draw()
 	if (ChangeFrame) {
 		Sprite_Transform_Draw(Player_1, player.x, player.y, player.width, player.height,
 			Dir * 8 + Grade * 2, player.columns, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-		if (KEY_DOWN(Global::PlayerControl::Player1[2]) || KEY_DOWN(Global::PlayerControl::Player1[3]) || KEY_DOWN(Global::PlayerControl::Player1[0]) || KEY_DOWN(Global::PlayerControl::Player1[1]))
+		if (Key_Down(Global::PlayerControl::Player1[2]) || Key_Down(Global::PlayerControl::Player1[3]) || Key_Down(Global::PlayerControl::Player1[0]) || Key_Down(Global::PlayerControl::Player1[1]))
 			ChangeFrame = !ChangeFrame;
 	}
 	else {
 		Sprite_Transform_Draw(Player_1, player.x, player.y, player.width, player.height,
 			Dir * 8 + Grade * 2 + 1, player.columns, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-		if (KEY_DOWN(Global::PlayerControl::Player1[2]) || KEY_DOWN(Global::PlayerControl::Player1[3]) || KEY_DOWN(Global::PlayerControl::Player1[0]) || KEY_DOWN(Global::PlayerControl::Player1[1]))
+		if (Key_Down(Global::PlayerControl::Player1[2]) || Key_Down(Global::PlayerControl::Player1[3]) || Key_Down(Global::PlayerControl::Player1[0]) || Key_Down(Global::PlayerControl::Player1[1]))
 			ChangeFrame = !ChangeFrame;
 	}
 	if (FlashFlag)
@@ -2491,7 +2491,7 @@ bool Player::Draw()
 	}
 	return false;
 }
-//����߼�����
+//玩家逻辑更新
 bool Player::Logic(int d)
 {
 	double srtime = GetTickCount() - lasttime;
@@ -2526,7 +2526,7 @@ bool Player::Logic(int d)
 	}
 	RECT PlayerRect = { player.x,player.y,player.x + 56,player.y + 56 };
 	RECT EnemyRect, Rect;
-	//�͵�ͼ�����ײ���
+	//和地图方块碰撞检测
 	{
 		int X1, Y1, X2, Y2;
 		switch (d)
@@ -2630,7 +2630,7 @@ bool Player::Logic(int d)
 			}
 		}
 	}
-    //�͵��˵���ײ���
+    //和敌人的碰撞检测
 	EnemyList* ep = enemylisthead.next;
 	while (ep != NULL)
 	{
@@ -2640,7 +2640,7 @@ bool Player::Logic(int d)
 		EnemyRect.right = ep->enemy->player.x + 56;
 		if (IntersectRect(&Rect, &EnemyRect, &PlayerRect))
 		{
-			// �������˺�����ƶ�����
+			// 不造成伤害，只阻碍移动方向
 			switch (d)
 			{
 			case Dirction::up:
@@ -2661,7 +2661,7 @@ bool Player::Logic(int d)
 		}
 		ep = ep->next;
 	}
-	//����Ҷ�����ײ���
+	//和玩家二的碰撞检测
 	if (IsDoublePlayer)
 	{
 		if (player2.Alive)
@@ -2694,7 +2694,7 @@ bool Player::Logic(int d)
 	}
 	return false;
 }
-//��ұ����д�������
+//玩家被命中后的处理方法
 bool Player::GetHurt(int power)
 {
 	//无敌状态免疫伤害
@@ -2710,7 +2710,7 @@ bool Player::GetHurt(int power)
 	else
 		return true;
 }
-//����������ɷ���
+//玩家出生重置方法
 void Player::Born()
 {
 	Health_Point = 1;
@@ -2731,8 +2731,8 @@ void Player::Born()
 	}
 }
 
-//��Ҷ�
-//��ʼ����Ҷ���Ϣ
+//玩家二
+//初始化玩家二信息
 Player2::Player2()
 {
 	Health_Point = 1;//血量
@@ -2763,13 +2763,13 @@ bool Player2::Draw()
 	if (ChangeFrame) {
 		Sprite_Transform_Draw(Player_2, player.x, player.y, player.width, player.height,
 			Dir * 8 + Grade * 2, player.columns, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-		if (KEY_DOWN(Global::PlayerControl::Player2[2]) || KEY_DOWN(Global::PlayerControl::Player2[3]) || KEY_DOWN(Global::PlayerControl::Player2[0]) || KEY_DOWN(Global::PlayerControl::Player2[1]))
+		if (Key_Down(Global::PlayerControl::Player2[2]) || Key_Down(Global::PlayerControl::Player2[3]) || Key_Down(Global::PlayerControl::Player2[0]) || Key_Down(Global::PlayerControl::Player2[1]))
 			ChangeFrame = !ChangeFrame;
 	}
 	else {
 		Sprite_Transform_Draw(Player_2, player.x, player.y, player.width, player.height,
 			Dir * 8 + Grade * 2 + 1, player.columns, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-		if (KEY_DOWN(Global::PlayerControl::Player2[2]) || KEY_DOWN(Global::PlayerControl::Player2[3]) || KEY_DOWN(Global::PlayerControl::Player2[0]) || KEY_DOWN(Global::PlayerControl::Player2[1]))
+		if (Key_Down(Global::PlayerControl::Player2[2]) || Key_Down(Global::PlayerControl::Player2[3]) || Key_Down(Global::PlayerControl::Player2[0]) || Key_Down(Global::PlayerControl::Player2[1]))
 			ChangeFrame = !ChangeFrame;
 	}
 	if (FlashFlag)
@@ -2787,7 +2787,7 @@ bool Player2::Draw()
 	return false;
 
 }
-//��Ҷ��߼�����
+//玩家二逻辑更新
 bool Player2::Logic(int d)
 {
 	double srtime = GetTickCount() - lasttime;
@@ -2822,7 +2822,7 @@ bool Player2::Logic(int d)
 	}
 	RECT PlayerRect = { player.x,player.y,player.x + 56,player.y + 56 };
 	RECT EnemyRect, Rect;
-	//�͵�ͼ�����ײ���
+	//和地图方块碰撞检测
 	{
 		int X1, Y1, X2, Y2;
 		switch (d)
@@ -2926,7 +2926,7 @@ bool Player2::Logic(int d)
 			}
 		}
 	}
-	//�͵��˵���ײ���
+	//和敌人的碰撞检测
 	EnemyList* ep = enemylisthead.next;
 	while (ep != NULL)
 	{
@@ -2936,7 +2936,7 @@ bool Player2::Logic(int d)
 		EnemyRect.right = ep->enemy->player.x + 56;
 		if (IntersectRect(&Rect, &EnemyRect, &PlayerRect))
 		{
-			// �������˺�����ƶ�����
+			// 不造成伤害，只阻碍移动方向
 			switch (d)
 			{
 			case Dirction::up:
@@ -2957,7 +2957,7 @@ bool Player2::Logic(int d)
 		}
 		ep = ep->next;
 	}
-	//�����һ����ײ���
+	//和玩家一的碰撞检测
 	if (Player1.Alive)
 	{
 		EnemyRect.bottom = Player1.player.y + 56;
@@ -3008,10 +3008,10 @@ void Player2::Born()
 
 }
 /*--------------------------------------------------------------------
-��ҵķ������˽���
+玩家的方法到此结束
 ----------------------------------------------------------------------*/
 
-//�ӵ������캯��
+//子弹的构造函数
 Bullet::Bullet(int shooter,int x, int y, int S, int D,int powlv) :Speed(S), Dir(D),Shooter(shooter)
 {
 	BoomFlag = 0;
@@ -3042,10 +3042,10 @@ Bullet::Bullet(int shooter,int x, int y, int S, int D,int powlv) :Speed(S), Dir(
 		break;
 	}
 }
-//�ӵ��ƶ�����ײ��ⷽ��
+//子弹移动和碰撞检测方法
 bool Bullet::Logic()
 {
-	//��ײ���
+	//碰撞检测
 	 double srtime = GetTickCount() - lasttime;
 	MovedPixel = Speed*srtime / 1000;
 	switch (Dir)
@@ -3070,8 +3070,8 @@ bool Bullet::Logic()
 	if (result == 1)
 	{
 		if(PowerLevel==0)
-		AddUselessObj(ID);//��¼����ID��������
-		//������ը
+		AddUselessObj(ID);//记录无效ID到回收链表
+		//创建爆炸
 		CreateBoom(bullet.x-20, bullet.y-20, 1, Dir);
 	}
 	if (result == 2)
@@ -3089,7 +3089,7 @@ bool Bullet::Logic()
 
 	return false;
 }
-//�ӵ���Ⱦ����
+//子弹渲染方法
 bool Bullet::Draw()
 {
 	if (BoomFlag == 0) {
@@ -3133,7 +3133,7 @@ bool Bullet::Draw()
 }
 
 /*--------------------------------------------------------------------
-Class MapPiece�ķ���
+Class MapPiece的方法
 ----------------------------------------------------------------------*/
      MapPiece::MapPiece()
 {
@@ -3179,7 +3179,7 @@ void MapPiece::Draw()
 		rp = rp->next;
 	}
 }
-//������ͼ����
+//创建地图方块
 void MapPiece::CreateMapRect(int x, int y, int wight, int hight)
 {
 	RECT *b = new RECT;
@@ -3941,5 +3941,5 @@ int  MapPiece::PECrach(int dir, RECT&playerrect)
 	return result;
 }
 /*--------------------------------------------------------------------
-Class MapPiece�ķ������˽���
+Class MapPiece的方法到此结束
 ----------------------------------------------------------------------*/

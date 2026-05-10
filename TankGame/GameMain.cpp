@@ -40,21 +40,23 @@ bool Game_Init(HWND window)
 	//Global::Sound::SoundSwicth = true;
 	//初始化玩家控制键  //完整版需要读取硬盘中的游戏配置
 	{
-		//玩家一
-		Global::PlayerControl::Player1[0] = VK_UP;
-		Global::PlayerControl::Player1[1] = VK_DOWN;
-		Global::PlayerControl::Player1[2] = VK_LEFT;
-		Global::PlayerControl::Player1[3] = VK_RIGHT;
-		Global::PlayerControl::Player1[4] = 0x58;
+		//玩家一 (使用DirectInput键码)
+		Global::PlayerControl::Player1[0] = 0xC8; // DIK_UP
+		Global::PlayerControl::Player1[1] = 0xD0; // DIK_DOWN
+		Global::PlayerControl::Player1[2] = 0xCB; // DIK_LEFT
+		Global::PlayerControl::Player1[3] = 0xCD; // DIK_RIGHT
+		Global::PlayerControl::Player1[4] = 0x2D; // DIK_X
 		//玩家二
-		Global::PlayerControl::Player2[0] = 0x57;
-		Global::PlayerControl::Player2[1] = 0x53;
-		Global::PlayerControl::Player2[2] = 0x41;;
-		Global::PlayerControl::Player2[3] = 0x44;
-		Global::PlayerControl::Player2[4] = 0x4A;
+		Global::PlayerControl::Player2[0] = 0x11; // DIK_W
+		Global::PlayerControl::Player2[1] = 0x1F; // DIK_S
+		Global::PlayerControl::Player2[2] = 0x1E; // DIK_A
+		Global::PlayerControl::Player2[3] = 0x20; // DIK_D
+		Global::PlayerControl::Player2[4] = 0x24; // DIK_J
 	}
 	//
 	ReadPlayerSettingInHD();
+	// 应用从配置文件读取的窗口大小设置
+	ApplyWindowSize(Global::Window::WindowSizeLevel);
     //切换到欢迎场景
     Game_ChangeScene(GAME_STATE::Home);
 
@@ -112,8 +114,22 @@ void Game_Render(HWND window, HDC device)
 
         spriteObj->End();
         d3dDev->EndScene();
-        //把后台缓存刷到前台显示
-        d3dDev->Present(NULL, NULL, NULL, NULL);
+
+        // 计算保持宽高比的视口区域，将后缓冲区内容等比缩放到窗口客户区
+        RECT clientRect;
+        GetClientRect(window, &clientRect);
+        int windowWidth = clientRect.right - clientRect.left;
+        int windowHeight = clientRect.bottom - clientRect.top;
+
+        if (windowWidth > 0 && windowHeight > 0)
+        {
+            RECT viewportRect = GetViewportRect(windowWidth, windowHeight);
+            d3dDev->Present(NULL, &viewportRect, NULL, NULL);
+        }
+        else
+        {
+            d3dDev->Present(NULL, NULL, NULL, NULL);
+        }
     }
 }
 //切换游戏场景
@@ -187,7 +203,7 @@ bool ReadPlayerSettingInHD()
 	ifstream in("GameSet.set", ios::in | ios::binary);
 	if (!in.is_open())
 	{
-		ShowMessage("无法打开游戏的设置文件");
+		// 配置文件不存在时使用默认值，不报错
 		return false;
 	}
 	for (int i = 0; i < 5; i++)
@@ -202,6 +218,13 @@ bool ReadPlayerSettingInHD()
 	}
 	in.read(&buf, 1);
 	Global::Sound::SoundSwicth=buf;
+	// 读取窗口大小档位（兼容旧版11字节配置文件）
+	if (in.read(&buf, 1))
+	{
+		int level = (unsigned char)buf;
+		if (level >= 0 && level < Global::Window::WindowSizeLevelCount)
+			Global::Window::WindowSizeLevel = level;
+	}
 	in.close();
 	return true;
 }

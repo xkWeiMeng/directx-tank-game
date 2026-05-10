@@ -71,6 +71,36 @@ void Direct3D_Shutdown()
     if (d3dDev) d3dDev->Release();
     if (d3d) d3d->Release();
 }
+
+// 计算保持宽高比的视口矩形（letterbox），用于Present的destRect
+RECT GetViewportRect(int windowWidth, int windowHeight)
+{
+    float gameAspect = (float)Global::Window::BaseWidth / (float)Global::Window::BaseHeight;
+    float windowAspect = (float)windowWidth / (float)windowHeight;
+
+    RECT viewportRect;
+    if (windowAspect > gameAspect)
+    {
+        // 窗口更宽，左右留黑边
+        int scaledWidth = (int)(windowHeight * gameAspect);
+        int offsetX = (windowWidth - scaledWidth) / 2;
+        viewportRect.left = offsetX;
+        viewportRect.top = 0;
+        viewportRect.right = offsetX + scaledWidth;
+        viewportRect.bottom = windowHeight;
+    }
+    else
+    {
+        // 窗口更高，上下留黑边
+        int scaledHeight = (int)(windowWidth / gameAspect);
+        int offsetY = (windowHeight - scaledHeight) / 2;
+        viewportRect.left = 0;
+        viewportRect.top = offsetY;
+        viewportRect.right = windowWidth;
+        viewportRect.bottom = offsetY + scaledHeight;
+    }
+    return viewportRect;
+}
 //画表面
 void DrawSurface(LPDIRECT3DSURFACE9 dest, float x, float y, LPDIRECT3DSURFACE9 source)
 {
@@ -251,6 +281,23 @@ void Sprite_Transform_Draw(LPDIRECT3DTEXTURE9 image, int x, int y, int width, in
     int frame, int columns, float rotation, float scaling, D3DCOLOR color)
 {
     Sprite_Transform_Draw(image, x, y, width, height, frame, columns, rotation, scaling, scaling, color);
+}
+
+void Sprite_Transform_Draw(LPDIRECT3DTEXTURE9 image, float x, float y, int width, int height,
+    int frame, int columns, float rotation, float scaleW, float scaleH, D3DCOLOR color)
+{
+    D3DXVECTOR2 scale(scaleW, scaleH);
+    D3DXVECTOR2 trans(x, y);
+    D3DXVECTOR2 center((float)(width * scaleW) / 2, (float)(height * scaleH) / 2);
+    D3DXMATRIX mat;
+    D3DXMatrixTransformation2D(&mat, NULL, 0, &scale, &center, rotation, &trans);
+    spriteObj->SetTransform(&mat);
+    int fx = (frame % columns) * width;
+    int fy = (frame / columns) * height;
+    RECT srcRect = { fx, fy, fx + width, fy + height };
+    spriteObj->Draw(image, &srcRect, NULL, NULL, color);
+    D3DXMatrixIdentity(&mat);
+    spriteObj->SetTransform(&mat);
 }
 
 //判定两个精灵是否碰撞

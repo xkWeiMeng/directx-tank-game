@@ -9,6 +9,7 @@ namespace Global {
 		float ScaleX = 1.0f;
 		float ScaleY = 1.0f;
 		int Now_GAME_STATE;
+		int WindowSizeLevel = 2;
     }
     namespace Home {
         int selectedType;

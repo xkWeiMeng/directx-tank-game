@@ -1,4 +1,5 @@
 ﻿#include "GameSettingScene.h"
+#include "KeyNames.h"
 #pragma warning(disable:4996)
 namespace GSS {
 	LPD3DXFONT font;
@@ -23,6 +24,8 @@ namespace GSS {
 
 	void FillRect(RECT & rect, long l, long r, long t, long b);
 
+	// 窗口大小档位名称
+	const char* WindowSizeLevelNames[] = { "小", "中", "大", "全屏" };
 }
 using namespace GSS;
 bool GameSettingScene::Init()
@@ -84,7 +87,6 @@ void GameSettingScene::Render()
 }
 void GSS::ShowSetting(int x, int y)
 {
-	char buf[10];
 	const int Ymove = 100;
 	FontPrint(font, x-128, y, "玩家一：");
 	FontPrint(font, x, y + 1 * Ymove, "上：");
@@ -93,16 +95,11 @@ void GSS::ShowSetting(int x, int y)
 	FontPrint(font, x, y + 4 * Ymove, "右：");
 	FontPrint(font, x, y + 5 * Ymove, "攻击：");
 
-	itoa(Global::PlayerControl::Player1[0], buf, 10);
-	FontPrint(font, x + 96, y + 1 * Ymove, buf);
-	itoa(Global::PlayerControl::Player1[1], buf, 10);
-	FontPrint(font, x + 96, y + 2 * Ymove, buf);
-	itoa(Global::PlayerControl::Player1[2], buf, 10);
-	FontPrint(font, x + 96, y + 3 * Ymove, buf);
-	itoa(Global::PlayerControl::Player1[3], buf, 10);
-	FontPrint(font, x + 96, y + 4 * Ymove, buf);
-	itoa(Global::PlayerControl::Player1[4], buf, 10);
-	FontPrint(font, x + 160, y + 5 * Ymove, buf);
+	FontPrint(font, x + 96, y + 1 * Ymove, GetDIKKeyName(Global::PlayerControl::Player1[0]));
+	FontPrint(font, x + 96, y + 2 * Ymove, GetDIKKeyName(Global::PlayerControl::Player1[1]));
+	FontPrint(font, x + 96, y + 3 * Ymove, GetDIKKeyName(Global::PlayerControl::Player1[2]));
+	FontPrint(font, x + 96, y + 4 * Ymove, GetDIKKeyName(Global::PlayerControl::Player1[3]));
+	FontPrint(font, x + 160, y + 5 * Ymove, GetDIKKeyName(Global::PlayerControl::Player1[4]));
 
 	const int Xmove = 400;
 	FontPrint(font, x + Xmove-128, y, "玩家二：");
@@ -112,17 +109,19 @@ void GSS::ShowSetting(int x, int y)
 	FontPrint(font, x + Xmove, y + 4 * Ymove, "右：");
 	FontPrint(font, x + Xmove, y + 5 * Ymove, "攻击：");
 
-	itoa(Global::PlayerControl::Player2[0], buf, 10);
-	FontPrint(font, x + 96 + Xmove, y + 1 * Ymove, buf);
-	itoa(Global::PlayerControl::Player2[1], buf, 10);
-	FontPrint(font, x + 96 + Xmove, y + 2 * Ymove, buf);
-	itoa(Global::PlayerControl::Player2[2], buf, 10);
-	FontPrint(font, x + 96 + Xmove, y + 3 * Ymove, buf);
-	itoa(Global::PlayerControl::Player2[3], buf, 10);
-	FontPrint(font, x + 96 + Xmove, y + 4 * Ymove, buf);
-	itoa(Global::PlayerControl::Player2[4], buf, 10);
-	FontPrint(font, x + 160 + Xmove, y + 5 * Ymove, buf);
+	FontPrint(font, x + 96 + Xmove, y + 1 * Ymove, GetDIKKeyName(Global::PlayerControl::Player2[0]));
+	FontPrint(font, x + 96 + Xmove, y + 2 * Ymove, GetDIKKeyName(Global::PlayerControl::Player2[1]));
+	FontPrint(font, x + 96 + Xmove, y + 3 * Ymove, GetDIKKeyName(Global::PlayerControl::Player2[2]));
+	FontPrint(font, x + 96 + Xmove, y + 4 * Ymove, GetDIKKeyName(Global::PlayerControl::Player2[3]));
+	FontPrint(font, x + 160 + Xmove, y + 5 * Ymove, GetDIKKeyName(Global::PlayerControl::Player2[4]));
 
+	// 窗口大小设置
+	FontPrint(font, 320, 740, "窗口大小：");
+	FontPrint(font, 608, 740, "< ");
+	FontPrint(font, 660, 740, WindowSizeLevelNames[Global::Window::WindowSizeLevel]);
+	FontPrint(font, 780, 740, " >");
+
+	// 音乐设置
 	FontPrint(font, 384, 832, "音乐：");
 	if (Global::Sound::SoundSwicth)
 		FontPrint(font, 544, 832, "开");
@@ -153,6 +152,8 @@ bool GSS::WritePlayerSettingIbHD()
 		out.write(&buf, 1);
 	}
 	buf = Global::Sound::SoundSwicth;
+	out.write(&buf, 1);
+	buf = (char)Global::Window::WindowSizeLevel;
 	out.write(&buf, 1);
 	out.close();
 	return true;
@@ -467,6 +468,22 @@ void GSS::UsingMouseChoose(RECT&mrect)
 	rect = { 544,832,608,896 };
 	if (IntersectRect(&nothing, &rect, &mrect))
 		Global::Sound::SoundSwicth= !Global::Sound::SoundSwicth;
+
+	// 窗口大小 "<" 按钮
+	rect = { 608,740,660,804 };
+	if (IntersectRect(&nothing, &rect, &mrect))
+	{
+		int level = Global::Window::WindowSizeLevel - 1;
+		if (level < 0) level = Global::Window::WindowSizeLevelCount - 1;
+		ApplyWindowSize(level);
+	}
+	// 窗口大小 ">" 按钮
+	rect = { 780,740,832,804 };
+	if (IntersectRect(&nothing, &rect, &mrect))
+	{
+		int level = (Global::Window::WindowSizeLevel + 1) % Global::Window::WindowSizeLevelCount;
+		ApplyWindowSize(level);
+	}
 
 }
 //现在的设置焦点

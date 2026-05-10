@@ -69,6 +69,7 @@ struct SPRITE
 
 bool Direct3D_Init(HWND hwnd, int width, int height, bool fullscreen);
 void Direct3D_Shutdown();
+RECT GetViewportRect(int windowWidth, int windowHeight);
 LPDIRECT3DSURFACE9 LoadSurface(string filename);
 void DrawSurface(LPDIRECT3DSURFACE9 dest, float x, float y, LPDIRECT3DSURFACE9 source);
 LPDIRECT3DTEXTURE9 LoadTexture(string filename, D3DCOLOR transcolor = D3DCOLOR_XRGB(0, 0, 0));
@@ -83,6 +84,8 @@ void Sprite_Transform_Draw(LPDIRECT3DTEXTURE9 image, int x, int y, RECT*rect,
 void Sprite_Transform_Draw(LPDIRECT3DTEXTURE9 image, int x, int y, int width, int height,
     int frame = 0, int columns = 1, float rotation = 0.0f, float scaling = 1.0f,
     D3DCOLOR color = D3DCOLOR_XRGB(255, 255, 255));
+void Sprite_Transform_Draw(LPDIRECT3DTEXTURE9 image, float x, float y, int width, int height,
+    int frame, int columns, float rotation, float scaleW, float scaleH, D3DCOLOR color);
 
 //bounding box collision detection
 int Collision(SPRITE sprite1, SPRITE sprite2);
