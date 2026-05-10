@@ -46,12 +46,14 @@ bool Game_Init(HWND window)
 		Global::PlayerControl::Player1[2] = 0xCB; // DIK_LEFT
 		Global::PlayerControl::Player1[3] = 0xCD; // DIK_RIGHT
 		Global::PlayerControl::Player1[4] = 0x2D; // DIK_X
+		Global::PlayerControl::Player1[5] = 0x2C; // DIK_Z
 		//玩家二
 		Global::PlayerControl::Player2[0] = 0x11; // DIK_W
 		Global::PlayerControl::Player2[1] = 0x1F; // DIK_S
 		Global::PlayerControl::Player2[2] = 0x1E; // DIK_A
 		Global::PlayerControl::Player2[3] = 0x20; // DIK_D
 		Global::PlayerControl::Player2[4] = 0x24; // DIK_J
+		Global::PlayerControl::Player2[5] = 0x25; // DIK_K
 	}
 	//
 	ReadPlayerSettingInHD();
@@ -166,6 +168,10 @@ void Game_ChangeScene(GAME_STATE to)
 			Global::Window::Now_GAME_STATE = 1;
 			scene = new GameSettingScene();
 			break;
+		case GAME_STATE::StageSelect:
+			Global::Window::Now_GAME_STATE = 1;
+			scene = new StageSelectScene();
+			break;
         default:
 			Global::Window::Now_GAME_STATE = 0;
 			scene = NULL;
@@ -199,31 +205,36 @@ void Game_Free(HWND window, HDC device)
 //读取游戏设置
 bool ReadPlayerSettingInHD()
 {
-	char buf;
+	unsigned char buf;
 	ifstream in("GameSet.set", ios::in | ios::binary);
 	if (!in.is_open())
 	{
 		// 配置文件不存在时使用默认值，不报错
 		return false;
 	}
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < 6; i++)
 	{
-		in.read(&buf, 1);
+		in.read((char*)&buf, 1);
 		Global::PlayerControl::Player1[i]=buf;
 	}
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < 6; i++)
 	{
-		in.read(&buf, 1);
+		in.read((char*)&buf, 1);
 		Global::PlayerControl::Player2[i]=buf;
 	}
-	in.read(&buf, 1);
+	in.read((char*)&buf, 1);
 	Global::Sound::SoundSwicth=buf;
 	// 读取窗口大小档位（兼容旧版11字节配置文件）
-	if (in.read(&buf, 1))
+	if (in.read((char*)&buf, 1))
 	{
-		int level = (unsigned char)buf;
+		int level = buf;
 		if (level >= 0 && level < Global::Window::WindowSizeLevelCount)
 			Global::Window::WindowSizeLevel = level;
+	}
+	// 读取Debug模式（兼容旧版12字节配置文件）
+	if (in.read((char*)&buf, 1))
+	{
+		Global::Debug::ShowDebugInfo = (buf != 0);
 	}
 	in.close();
 	return true;

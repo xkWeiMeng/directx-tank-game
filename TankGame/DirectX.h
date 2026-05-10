@@ -122,6 +122,7 @@ bool Key_Down(int);
 int Mouse_Button(int);
 int Mouse_X();
 int Mouse_Y();
+int Mouse_Z();
 void XInput_Vibrate(int contNum = 0, int amount = 65535);
 bool XInput_Controller_Found();
 

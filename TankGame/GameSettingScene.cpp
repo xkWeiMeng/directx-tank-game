@@ -1,73 +1,336 @@
 ﻿#include "GameSettingScene.h"
 #include "KeyNames.h"
+#include <cmath>
+#include <cstdlib>
 #pragma warning(disable:4996)
 namespace GSS {
-	LPD3DXFONT font;
-	LPDIRECT3DSURFACE9 BlackRect = NULL;
-	LPDIRECT3DTEXTURE9 GameSettingPNG=NULL;
+	LPD3DXFONT font = NULL;
+	LPD3DXFONT fontShadow = NULL;
+	LPD3DXFONT titleFont = NULL;
+	LPD3DXFONT titleFontShadow = NULL;
+	LPD3DXFONT hintFont = NULL;
+	LPDIRECT3DTEXTURE9 OverlayTex = NULL;
+	LPDIRECT3DTEXTURE9 TankTex = NULL;
 	RECT mouseRect;
 
 	int Choose=0;
-	void ShowSetting(int x, int y);
+	int scrollY = 0;
+	const int Ymove = 80;
 
 	bool WritePlayerSettingIbHD();
-
 	int ReadK_B();
-
 	void UsingMouseChoose(RECT & mrect);
-
 	void NowSettingFoucs();
-
-	void DrawChooseBlackRect();
-
-	void DrawBlackRect(int x, int y);
-
 	void FillRect(RECT & rect, long l, long r, long t, long b);
 
 	// 窗口大小档位名称
 	const char* WindowSizeLevelNames[] = { "小", "中", "大", "全屏" };
+
+	// ---------- 粒子系统 ----------
+	static const int MAX_PARTICLES = 50;
+	struct Particle {
+		float x, y, speedY, speedX, size;
+		int alpha, maxAlpha;
+		D3DCOLOR color;
+	};
+	static Particle particles[MAX_PARTICLES];
+	static bool particlesInited = false;
+
+	static void InitParticles()
+	{
+		for (int i = 0; i < MAX_PARTICLES; i++)
+		{
+			Particle &p = particles[i];
+			p.x = (float)(rand() % 1024);
+			p.y = (float)(rand() % 960);
+			p.speedY = -(15.0f + (float)(rand() % 25));
+			p.speedX = (float)(rand() % 20 - 10) * 0.5f;
+			p.size = 1.5f + (float)(rand() % 30) * 0.1f;
+			p.maxAlpha = 40 + rand() % 60;
+			p.alpha = rand() % p.maxAlpha;
+			int colorType = rand() % 3;
+			if (colorType == 0)
+				p.color = D3DCOLOR_XRGB(255, 180, 60);
+			else if (colorType == 1)
+				p.color = D3DCOLOR_XRGB(100, 160, 255);
+			else
+				p.color = D3DCOLOR_XRGB(180, 180, 200);
+		}
+		particlesInited = true;
+	}
+
+	static void UpdateParticles(float dt)
+	{
+		for (int i = 0; i < MAX_PARTICLES; i++)
+		{
+			Particle &p = particles[i];
+			p.y += p.speedY * dt;
+			p.x += p.speedX * dt;
+			if (p.y < -10.0f)
+			{
+				p.y = 970.0f;
+				p.x = (float)(rand() % 1024);
+				p.speedY = -(15.0f + (float)(rand() % 25));
+				p.speedX = (float)(rand() % 20 - 10) * 0.5f;
+				p.alpha = 0;
+			}
+			if (p.x < -10.0f) p.x = 1034.0f;
+			if (p.x > 1034.0f) p.x = -10.0f;
+		}
+	}
+
+	static void RenderParticles()
+	{
+		float t = (float)GetTickCount() / 1000.0f;
+		for (int i = 0; i < MAX_PARTICLES; i++)
+		{
+			Particle &p = particles[i];
+			float flicker = 0.6f + 0.4f * sinf(t * (2.0f + i * 0.1f) + (float)i);
+			int a = (int)(p.maxAlpha * flicker);
+			if (a < 0) a = 0;
+			if (a > 255) a = 255;
+			D3DCOLOR c = D3DCOLOR_ARGB(a,
+				(p.color >> 16) & 0xFF,
+				(p.color >> 8) & 0xFF,
+				p.color & 0xFF);
+			Sprite_Transform_Draw(OverlayTex, (int)p.x, (int)p.y, 1, 1,
+				0, 1, 0, p.size, c);
+		}
+	}
+
+	// ---------- 渲染辅助 ----------
+	// 带阴影的文字渲染
+	static void FontPrint3D(LPD3DXFONT mainFont, LPD3DXFONT shadowFont,
+		int x, int y, const char* text, D3DCOLOR mainColor,
+		D3DCOLOR shadowColor = D3DCOLOR_ARGB(160, 0, 0, 0))
+	{
+		FontPrint(shadowFont, x + 2, y + 3, text, shadowColor);
+		FontPrint(mainFont, x, y, text, mainColor);
+	}
+
+	// 绘制选中高亮条
+	static void DrawHighlightBar(int x, int y, float barW, float barH, float t)
+	{
+		float pulse = 0.3f + 0.15f * sinf(t * 3.0f);
+		int barAlpha = (int)(pulse * 255);
+		if (barAlpha > 255) barAlpha = 255;
+		Sprite_Transform_Draw(OverlayTex, x, y, 1, 1, 0, 1, 0,
+			barW, barH, D3DCOLOR_ARGB(barAlpha, 255, 180, 30));
+	}
+
+	// 绘制分隔线
+	static void DrawSeparator(int y, int alpha)
+	{
+		Sprite_Transform_Draw(OverlayTex, 80, y, 1, 1, 0, 1, 0,
+			864.0f, 1.0f, D3DCOLOR_ARGB(alpha, 100, 120, 150));
+	}
+
+	static DWORD lastFrameTime = 0;
+
+	// ---------- 渲染设置内容 ----------
+	static void RenderSettings(int x, int y)
+	{
+		float t = (float)GetTickCount() / 1000.0f;
+		const int Xmove = 400;
+
+		// ===== 分隔线: 标题下方 =====
+		DrawSeparator(y - 10, 60);
+
+		// ===== 玩家一标题 =====
+		float p1Pulse = 0.5f + 0.5f * sinf(t * 2.5f);
+		int p1G = (int)(180 + p1Pulse * 60);
+		FontPrint3D(font, fontShadow, x - 128, y, "玩家一：",
+			D3DCOLOR_XRGB(100, p1G, 255));
+
+		// ===== 玩家二标题 =====
+		float p2Pulse = 0.5f + 0.5f * sinf(t * 2.5f + 1.0f);
+		int p2G = (int)(200 + p2Pulse * 55);
+		FontPrint3D(font, fontShadow, x + Xmove - 128, y, "玩家二：",
+			D3DCOLOR_XRGB(80, 255, p2G));
+
+		// ===== 按键标签和值 =====
+		const char* labels[] = { "上：", "下：", "左：", "右：", "攻击：", "切换：" };
+		int labelX_short = x;
+		int labelX_long = x;
+		int valueX_short = x + 96;
+		int valueX_long = x + 160;
+
+		for (int i = 0; i < 6; i++)
+		{
+			int row = i + 1;
+			int lx = (i < 4) ? labelX_short : labelX_long;
+			int vx = (i < 4) ? valueX_short : valueX_long;
+
+			// 玩家一标签
+			float subtle = 0.5f + 0.5f * sinf(t * 1.5f + i * 0.3f);
+			int gray = (int)(160 + subtle * 40);
+			FontPrint3D(font, fontShadow, lx, y + row * Ymove, labels[i],
+				D3DCOLOR_XRGB(gray, gray, gray + 15));
+
+			// 玩家一值
+			bool isSelected = (Choose == i);
+			if (isSelected)
+			{
+				DrawHighlightBar(vx - 8, y + row * Ymove - 4, 140.0f, 72.0f, t);
+				// 坦克光标
+				int cursorFrame = 1 * 8 + ((GetTickCount() / 150) % 2);
+				float bob = sinf(t * 5.0f) * 3.0f;
+				Sprite_Transform_Draw(TankTex, vx - 50 + (int)bob, y + row * Ymove + 6, 28, 28,
+					cursorFrame, 8, 0, 1.2f, D3DCOLOR_XRGB(255, 255, 100));
+				float txtPulse = 0.5f + 0.5f * sinf(t * 4.0f);
+				int mainG = (int)(220 + txtPulse * 35);
+				int mainB = (int)(60 + txtPulse * 40);
+				FontPrint3D(font, fontShadow, vx, y + row * Ymove,
+					GetDIKKeyName(Global::PlayerControl::Player1[i]),
+					D3DCOLOR_XRGB(255, mainG, mainB));
+			}
+			else
+			{
+				FontPrint3D(font, fontShadow, vx, y + row * Ymove,
+					GetDIKKeyName(Global::PlayerControl::Player1[i]),
+					D3DCOLOR_XRGB(200, 200, 210));
+			}
+
+			// 玩家二标签
+			FontPrint3D(font, fontShadow, lx + Xmove, y + row * Ymove, labels[i],
+				D3DCOLOR_XRGB(gray, gray, gray + 15));
+
+			// 玩家二值
+			bool isSelected2 = (Choose == i + 6);
+			if (isSelected2)
+			{
+				DrawHighlightBar(vx + Xmove - 8, y + row * Ymove - 4, 140.0f, 72.0f, t);
+				int cursorFrame2 = 1 * 8 + ((GetTickCount() / 150) % 2);
+				float bob2 = sinf(t * 5.0f) * 3.0f;
+				Sprite_Transform_Draw(TankTex, vx + Xmove - 50 + (int)bob2, y + row * Ymove + 6, 28, 28,
+					cursorFrame2, 8, 0, 1.2f, D3DCOLOR_XRGB(100, 255, 150));
+				float txtPulse2 = 0.5f + 0.5f * sinf(t * 4.0f);
+				int mainG2 = (int)(220 + txtPulse2 * 35);
+				int mainB2 = (int)(60 + txtPulse2 * 40);
+				FontPrint3D(font, fontShadow, vx + Xmove, y + row * Ymove,
+					GetDIKKeyName(Global::PlayerControl::Player2[i]),
+					D3DCOLOR_XRGB(255, mainG2, mainB2));
+			}
+			else
+			{
+				FontPrint3D(font, fontShadow, vx + Xmove, y + row * Ymove,
+					GetDIKKeyName(Global::PlayerControl::Player2[i]),
+					D3DCOLOR_XRGB(200, 200, 210));
+			}
+		}
+
+		// ===== 分隔线: 按键设置下方 =====
+		DrawSeparator(y + 7 * Ymove - 15, 40);
+
+		// ===== 窗口大小 =====
+		FontPrint3D(font, fontShadow, 320, y + 7 * Ymove, "窗口大小：",
+			D3DCOLOR_XRGB(180, 180, 200));
+		// < 按钮
+		float arrowPulse = 0.5f + 0.5f * sinf(t * 3.0f);
+		int arrowBright = (int)(180 + arrowPulse * 75);
+		FontPrint3D(font, fontShadow, 608, y + 7 * Ymove, "<",
+			D3DCOLOR_XRGB(arrowBright, arrowBright, 255));
+		FontPrint3D(font, fontShadow, 660, y + 7 * Ymove,
+			WindowSizeLevelNames[Global::Window::WindowSizeLevel],
+			D3DCOLOR_XRGB(255, 220, 100));
+		FontPrint3D(font, fontShadow, 780, y + 7 * Ymove, ">",
+			D3DCOLOR_XRGB(arrowBright, arrowBright, 255));
+
+		// ===== 音乐 =====
+		FontPrint3D(font, fontShadow, 384, y + 8 * Ymove, "音乐：",
+			D3DCOLOR_XRGB(180, 180, 200));
+		if (Global::Sound::SoundSwicth)
+			FontPrint3D(font, fontShadow, 544, y + 8 * Ymove, "开",
+				D3DCOLOR_XRGB(80, 255, 120));
+		else
+			FontPrint3D(font, fontShadow, 544, y + 8 * Ymove, "关",
+				D3DCOLOR_XRGB(255, 80, 80));
+
+		// ===== Debug模式 =====
+		FontPrint3D(font, fontShadow, 320, y + 9 * Ymove, "Debug模式：",
+			D3DCOLOR_XRGB(180, 180, 200));
+		if (Global::Debug::ShowDebugInfo)
+			FontPrint3D(font, fontShadow, 608, y + 9 * Ymove, "开",
+				D3DCOLOR_XRGB(80, 255, 120));
+		else
+			FontPrint3D(font, fontShadow, 608, y + 9 * Ymove, "关",
+				D3DCOLOR_XRGB(255, 80, 80));
+	}
 }
 using namespace GSS;
 bool GameSettingScene::Init()
 {
+	scrollY = 0;
 	font = MakeFont("微软雅黑", 64);
-	GameSettingPNG = LoadTexture(Resource::Texture::GameSetting, D3DCOLOR_XRGB(255, 255, 255));
-	if (!GameSettingPNG)
+	fontShadow = MakeFont("微软雅黑", 66);
+	titleFont = MakeFont("Impact", 80);
+	titleFontShadow = MakeFont("Impact", 82);
+	hintFont = MakeFont("微软雅黑", 24);
+
+	TankTex = LoadTexture(Resource::Texture::Player_1, D3DCOLOR_XRGB(0, 0, 0));
+
+	// 创建1x1白色纹理（用于遮罩、粒子、高亮条）
+	HRESULT result = D3DXCreateTexture(d3dDev, 1, 1, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &OverlayTex);
+	if (result == D3D_OK)
 	{
-		ShowMessage("装载 设置背景 纹理失败!");
-		return false;
+		D3DLOCKED_RECT lr;
+		if (SUCCEEDED(OverlayTex->LockRect(0, &lr, NULL, 0)))
+		{
+			*((DWORD*)lr.pBits) = 0xFFFFFFFF;
+			OverlayTex->UnlockRect(0);
+		}
 	}
-	d3dDev->CreateOffscreenPlainSurface(
-		100,
-		100,
-		D3DFMT_X8R8G8B8,
-		D3DPOOL_DEFAULT,
-		&BlackRect,
-		NULL
-	);
+
+	lastFrameTime = GetTickCount();
+	particlesInited = false;
+	InitParticles();
 
 	return true;
 }
 
 void GameSettingScene::End()
 {
-	font->Release();
-	BlackRect->Release();
-	SAFE_RELEASE(GameSettingPNG);
+	if (font) { font->Release(); font = NULL; }
+	if (fontShadow) { fontShadow->Release(); fontShadow = NULL; }
+	if (titleFont) { titleFont->Release(); titleFont = NULL; }
+	if (titleFontShadow) { titleFontShadow->Release(); titleFontShadow = NULL; }
+	if (hintFont) { hintFont->Release(); hintFont = NULL; }
+	SAFE_RELEASE(OverlayTex);
+	SAFE_RELEASE(TankTex);
 }
 
 void GameSettingScene::Update()
 {
+	// 更新粒子
+	DWORD now = GetTickCount();
+	float dt = (float)(now - lastFrameTime) / 1000.0f;
+	if (dt > 0.05f) dt = 0.05f;
+	lastFrameTime = now;
+	UpdateParticles(dt);
+
 	if (Key_Up(DIK_ESCAPE))
 	{
 		WritePlayerSettingIbHD();
 		Game_ChangeScene(GAME_STATE::Home);
+		return;
 	}
 
 	if (Key_Up(DIK_RETURN))
 	{
 		WritePlayerSettingIbHD();
 		Game_ChangeScene(GAME_STATE::Home);
+		return;
+	}
+
+	// 鼠标滚轮滚动
+	int wheelDelta = Mouse_Z();
+	if (wheelDelta != 0)
+	{
+		scrollY += wheelDelta / 3;
+		if (scrollY > 0) scrollY = 0;
+		int contentBottom = 40 + 9 * Ymove + 64;
+		int minScroll = contentBottom > 960 ? -(contentBottom - 960) : 0;
+		if (scrollY < minScroll) scrollY = minScroll;
 	}
 
 	if (Mouse_Button(MLButton))
@@ -80,59 +343,44 @@ void GameSettingScene::Update()
 
 void GameSettingScene::Render()
 {
-//	Sprite_Transform_Draw(GameSettingPNG, 0, 0,
-	//	510, 430, 0, 7, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-	ShowSetting(200, 100);
-	DrawChooseBlackRect();
-}
-void GSS::ShowSetting(int x, int y)
-{
-	const int Ymove = 100;
-	FontPrint(font, x-128, y, "玩家一：");
-	FontPrint(font, x, y + 1 * Ymove, "上：");
-	FontPrint(font, x, y + 2 * Ymove, "下：");
-	FontPrint(font, x, y + 3 * Ymove, "左：");
-	FontPrint(font, x, y + 4 * Ymove, "右：");
-	FontPrint(font, x, y + 5 * Ymove, "攻击：");
+	float t = (float)GetTickCount() / 1000.0f;
 
-	FontPrint(font, x + 96, y + 1 * Ymove, GetDIKKeyName(Global::PlayerControl::Player1[0]));
-	FontPrint(font, x + 96, y + 2 * Ymove, GetDIKKeyName(Global::PlayerControl::Player1[1]));
-	FontPrint(font, x + 96, y + 3 * Ymove, GetDIKKeyName(Global::PlayerControl::Player1[2]));
-	FontPrint(font, x + 96, y + 4 * Ymove, GetDIKKeyName(Global::PlayerControl::Player1[3]));
-	FontPrint(font, x + 160, y + 5 * Ymove, GetDIKKeyName(Global::PlayerControl::Player1[4]));
+	spriteObj->Begin(D3DXSPRITE_ALPHABLEND);
 
-	const int Xmove = 400;
-	FontPrint(font, x + Xmove-128, y, "玩家二：");
-	FontPrint(font, x + Xmove, y + 1 * Ymove, "上：");
-	FontPrint(font, x + Xmove, y + 2 * Ymove, "下：");
-	FontPrint(font, x + Xmove, y + 3 * Ymove, "左：");
-	FontPrint(font, x + Xmove, y + 4 * Ymove, "右：");
-	FontPrint(font, x + Xmove, y + 5 * Ymove, "攻击：");
+	// ===== 深色背景覆盖 =====
+	Sprite_Transform_Draw(OverlayTex, 0, 0, 1, 1, 0, 1, 0,
+		1024.0f, 960.0f, D3DCOLOR_XRGB(10, 10, 26));
 
-	FontPrint(font, x + 96 + Xmove, y + 1 * Ymove, GetDIKKeyName(Global::PlayerControl::Player2[0]));
-	FontPrint(font, x + 96 + Xmove, y + 2 * Ymove, GetDIKKeyName(Global::PlayerControl::Player2[1]));
-	FontPrint(font, x + 96 + Xmove, y + 3 * Ymove, GetDIKKeyName(Global::PlayerControl::Player2[2]));
-	FontPrint(font, x + 96 + Xmove, y + 4 * Ymove, GetDIKKeyName(Global::PlayerControl::Player2[3]));
-	FontPrint(font, x + 160 + Xmove, y + 5 * Ymove, GetDIKKeyName(Global::PlayerControl::Player2[4]));
+	// ===== 动态背景粒子 =====
+	RenderParticles();
 
-	// 窗口大小设置
-	FontPrint(font, 320, 740, "窗口大小：");
-	FontPrint(font, 608, 740, "< ");
-	FontPrint(font, 660, 740, WindowSizeLevelNames[Global::Window::WindowSizeLevel]);
-	FontPrint(font, 780, 740, " >");
+	// ===== 标题 "游戏设定" =====
+	float pulse = 0.5f + 0.5f * sinf(t * 2.0f);
+	int glowR = 255;
+	int glowG = (int)(160 + pulse * 80);
+	int glowB = (int)(20 + pulse * 40);
 
-	// 音乐设置
-	FontPrint(font, 384, 832, "音乐：");
-	if (Global::Sound::SoundSwicth)
-		FontPrint(font, 544, 832, "开");
-	else
-		FontPrint(font, 544, 832, "关");
+	FontPrint(titleFontShadow, 354, 24, "游 戏 设 定", D3DCOLOR_ARGB(180, 0, 0, 0));
+	FontPrint(titleFontShadow, 352, 20, "游 戏 设 定",
+		D3DCOLOR_ARGB((int)(50 + pulse * 40), glowR, glowG, 0));
+	FontPrint(titleFont, 352, 20, "游 戏 设 定", D3DCOLOR_XRGB(glowR, glowG, glowB));
 
+	// ===== 设置内容 =====
+	RenderSettings(200, 130 + scrollY);
+
+	// ===== 底部提示 =====
+	if ((GetTickCount() / 600) % 2 == 0)
+	{
+		FontPrint(hintFont, 370, 920, "ESC / ENTER 返回主菜单",
+			D3DCOLOR_XRGB(180, 180, 180));
+	}
+
+	spriteObj->End();
 }
 
 bool GSS::WritePlayerSettingIbHD()
 {
-	char buf;
+	unsigned char buf;
 	ofstream out("GameSet.set", ios::out | ios::binary);
 	if (!out.is_open())
 	{
@@ -141,20 +389,22 @@ bool GSS::WritePlayerSettingIbHD()
 		return false;
 	}
 	out.seekp(0, ios::beg);
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < 6; i++)
 	{
-		buf= Global::PlayerControl::Player1[i];
-		out.write(&buf, 1); 
+		buf= (unsigned char)Global::PlayerControl::Player1[i];
+		out.write((char*)&buf, 1); 
 	}
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < 6; i++)
 	{
-		buf = Global::PlayerControl::Player2[i];
-		out.write(&buf, 1);
+		buf = (unsigned char)Global::PlayerControl::Player2[i];
+		out.write((char*)&buf, 1);
 	}
-	buf = Global::Sound::SoundSwicth;
-	out.write(&buf, 1);
-	buf = (char)Global::Window::WindowSizeLevel;
-	out.write(&buf, 1);
+	buf = (unsigned char)Global::Sound::SoundSwicth;
+	out.write((char*)&buf, 1);
+	buf = (unsigned char)Global::Window::WindowSizeLevel;
+	out.write((char*)&buf, 1);
+	buf = (unsigned char)Global::Debug::ShowDebugInfo;
+	out.write((char*)&buf, 1);
 	out.close();
 	return true;
 }
@@ -432,45 +682,52 @@ int GSS::ReadK_B()
 void GSS::UsingMouseChoose(RECT&mrect)
 {
 	RECT rect, nothing;
-	rect = { 296,200,424,264 };
+	int by = 130 + scrollY;
 	//设置玩家一
+	FillRect(rect, 296, 424, by + Ymove, by + Ymove + 64);
 	if (IntersectRect(&nothing, &rect, &mrect))
 		Choose = 0;
-	rect = { 296,300,424,364 };
+	FillRect(rect, 296, 424, by + 2*Ymove, by + 2*Ymove + 64);
 	if (IntersectRect(&nothing, &rect, &mrect))
 		Choose = 1;
-	rect = { 296,400,424,464 };
+	FillRect(rect, 296, 424, by + 3*Ymove, by + 3*Ymove + 64);
 	if (IntersectRect(&nothing, &rect, &mrect))
 		Choose = 2;
-	rect = { 296,500,424,564 };
+	FillRect(rect, 296, 424, by + 4*Ymove, by + 4*Ymove + 64);
 	if (IntersectRect(&nothing, &rect, &mrect))
 		Choose = 3;
-	rect = { 296,600,424,664 };
+	FillRect(rect, 360, 488, by + 5*Ymove, by + 5*Ymove + 64);
 	if (IntersectRect(&nothing, &rect, &mrect))
 		Choose = 4;
-	//设置玩家二
-	rect = { 696,200,824,264 };
+	FillRect(rect, 360, 488, by + 6*Ymove, by + 6*Ymove + 64);
 	if (IntersectRect(&nothing, &rect, &mrect))
 		Choose = 5;
-	rect = { 696,300,824,364 };
+	//设置玩家二
+	FillRect(rect, 696, 824, by + Ymove, by + Ymove + 64);
 	if (IntersectRect(&nothing, &rect, &mrect))
 		Choose = 6;
-	rect = { 696,400,824,464 };
+	FillRect(rect, 696, 824, by + 2*Ymove, by + 2*Ymove + 64);
 	if (IntersectRect(&nothing, &rect, &mrect))
 		Choose = 7;
-	rect = { 696,500,824,564 };
+	FillRect(rect, 696, 824, by + 3*Ymove, by + 3*Ymove + 64);
 	if (IntersectRect(&nothing, &rect, &mrect))
 		Choose = 8;
-	rect = { 696,600,824,664 };
+	FillRect(rect, 696, 824, by + 4*Ymove, by + 4*Ymove + 64);
 	if (IntersectRect(&nothing, &rect, &mrect))
 		Choose = 9;
+	FillRect(rect, 760, 888, by + 5*Ymove, by + 5*Ymove + 64);
+	if (IntersectRect(&nothing, &rect, &mrect))
+		Choose = 10;
+	FillRect(rect, 760, 888, by + 6*Ymove, by + 6*Ymove + 64);
+	if (IntersectRect(&nothing, &rect, &mrect))
+		Choose = 11;
 	//设置音乐开关
-	rect = { 544,832,608,896 };
+	FillRect(rect, 544, 608, by + 8*Ymove, by + 8*Ymove + 64);
 	if (IntersectRect(&nothing, &rect, &mrect))
 		Global::Sound::SoundSwicth= !Global::Sound::SoundSwicth;
 
 	// 窗口大小 "<" 按钮
-	rect = { 608,740,660,804 };
+	FillRect(rect, 608, 660, by + 7*Ymove, by + 7*Ymove + 64);
 	if (IntersectRect(&nothing, &rect, &mrect))
 	{
 		int level = Global::Window::WindowSizeLevel - 1;
@@ -478,25 +735,30 @@ void GSS::UsingMouseChoose(RECT&mrect)
 		ApplyWindowSize(level);
 	}
 	// 窗口大小 ">" 按钮
-	rect = { 780,740,832,804 };
+	FillRect(rect, 780, 832, by + 7*Ymove, by + 7*Ymove + 64);
 	if (IntersectRect(&nothing, &rect, &mrect))
 	{
 		int level = (Global::Window::WindowSizeLevel + 1) % Global::Window::WindowSizeLevelCount;
 		ApplyWindowSize(level);
 	}
 
+	// Debug模式开关
+	FillRect(rect, 608, 672, by + 9*Ymove, by + 9*Ymove + 64);
+	if (IntersectRect(&nothing, &rect, &mrect))
+		Global::Debug::ShowDebugInfo = !Global::Debug::ShowDebugInfo;
+
 }
 //现在的设置焦点
 void GSS::NowSettingFoucs()
 {
 	int buf;
-	if (Choose / 5 == 0)
+	if (Choose / 6 == 0)
 	{
 		buf= ReadK_B();
 		if (buf != -1)
 		{
 			Global::PlayerControl::Player1[Choose] = buf;
-			Choose = Choose == 9 ? 0 : Choose + 1;
+			Choose = Choose == 11 ? 0 : Choose + 1;
 		}
 	}
 	else
@@ -504,65 +766,11 @@ void GSS::NowSettingFoucs()
 		buf = ReadK_B();
 		if (buf != -1)
 		{
-			Global::PlayerControl::Player2[Choose-5] = buf;
-			Choose = Choose == 9 ? 0 : Choose + 1;
+			Global::PlayerControl::Player2[Choose-6] = buf;
+			Choose = Choose == 11 ? 0 : Choose + 1;
 		}
 
 	}
-}
-//用黑框凸显现在选择的选项
-void GSS::DrawChooseBlackRect()
-{
-	switch (Choose)
-	{
-	case 0:
-		DrawBlackRect(296,200);
-		break;
-	case 1:
-		DrawBlackRect(296,300);
-		break;
-	case 2:
-		DrawBlackRect(293,400);
-		break;
-	case 3:
-		DrawBlackRect(296,500);
-		break;
-	case 4:
-		DrawBlackRect(360,600);
-		break;
-
-	case 5:
-		DrawBlackRect(696,200);
-		break;
-	case 6:
-		DrawBlackRect(696,300);
-		break;
-	case 7:
-		DrawBlackRect(696,400);
-		break;
-	case 8:
-		DrawBlackRect(696,500);
-		break;
-	case 9:
-		DrawBlackRect(760,600);
-		break;
-	default:
-		break;
-	}
-}
-//画黑色方框
-void GSS::DrawBlackRect(int x, int y)
-{
-	RECT rect;
-	FillRect(rect, x - 3, x + 67, y - 3, y);
-	d3dDev->StretchRect(BlackRect, NULL, backBuffer, &rect, D3DTEXF_NONE);
-	FillRect(rect, x - 3, x + 67, y + 64, y + 67);
-	d3dDev->StretchRect(BlackRect, NULL, backBuffer, &rect, D3DTEXF_NONE);
-	FillRect(rect, x - 3, x, y, y + 64);
-	d3dDev->StretchRect(BlackRect, NULL, backBuffer, &rect, D3DTEXF_NONE);
-	FillRect(rect, x + 64, x + 67, y, y + 64);
-	d3dDev->StretchRect(BlackRect, NULL, backBuffer, &rect, D3DTEXF_NONE);
-
 }
 //填充RECT
 void GSS::FillRect(RECT&rect, long l, long r, long t, long b)

@@ -13,16 +13,18 @@ namespace Global {
     }
     namespace Home {
         int selectedType;
+		int SelectedStage = 0;
     }
     namespace Debug {
+        bool ShowDebugInfo = false;
         int currentFPS = 0;
     }
 	namespace DesignMap {
 		string NewMapName;
 	}
 	namespace PlayerControl {
-		int Player1[5];
-		int Player2[5];
+		int Player1[6];
+		int Player2[6];
 	}
 	namespace Sound {
 		bool SoundSwicth;

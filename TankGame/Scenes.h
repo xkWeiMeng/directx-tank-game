@@ -7,3 +7,4 @@
 #include"GamingScene.h"
 #include "DesignMapScene.h"
 #include "GameSettingScene.h"
+#include "StageSelectScene.h"

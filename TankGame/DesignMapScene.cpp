@@ -20,6 +20,7 @@ namespace DMS {
 	RECT mouseRect;
 	LPD3DXFONT font;
 	LPD3DXFONT NumFont;
+	LPD3DXFONT HintFont;
 	LPDIRECT3DTEXTURE9 Player_1 = NULL;
 	LPDIRECT3DTEXTURE9 Player_2 = NULL;
 	LPDIRECT3DTEXTURE9 Enemy_TXTTURE = NULL;
@@ -35,6 +36,7 @@ bool DesignMapScene::Init()
 	HRESULT result;
 	font = MakeFont("微软雅黑", 86);
 	NumFont=MakeFont("微软雅黑", 24);
+	HintFont=MakeFont("微软雅黑", 18);
 	result = d3dDev->CreateOffscreenPlainSurface(
 		100,
 		100,
@@ -85,6 +87,7 @@ void DesignMapScene::End()
 	SAFE_RELEASE(Tile);
 	SAFE_RELEASE(font);
 	SAFE_RELEASE(NumFont);
+	SAFE_RELEASE(HintFont);
 	for (int i = 0; i < 13; i++)
 		for (int j = 0; j < 13; j++)
 			Map[j][i] = 0;
@@ -117,7 +120,7 @@ void DesignMapScene::Update()
 		if (Key_Up(DIK_RETURN))
 		{		
 			WriteMapToHD(FileNameBuf);
-			Global::DesignMap::NewMapName = FileNameBuf;
+			Global::DesignMap::NewMapName = "custom\\" + FileNameBuf;
 			Game_ChangeScene(GAME_STATE::Home);
 		}
 
@@ -207,6 +210,8 @@ void DesignMapScene::Render()
 		DrawMapPiece(NowMyChoose, mousePoint.x+10, mousePoint.y+20);
 		DrawBlackRect(mousePoint.x+10, mousePoint.y+20);
 		DrawMapPieceChoose(MapPieceChoose);
+		//操作提示
+		FontPrint(HintFont, 64, 930, "左键放置  右键清除  上下键切换图块  回车保存并退出", D3DCOLOR_XRGB(160, 160, 160));
 
 	}
 	else
@@ -215,6 +220,7 @@ void DesignMapScene::Render()
 		FontPrint(font, 128, 400, "地图名称：");
 		if(FileNameBuf.length()!=0)
 		FontPrint(font, 458, 400, FileNameBuf);
+		FontPrint(HintFont, 128, 500, "输入名称后按回车开始编辑", D3DCOLOR_XRGB(160, 160, 160));
 	}
 }
 
@@ -238,7 +244,7 @@ void DMS::DesignMapName()
 	cbuf = ReadK_B();
 	if (cbuf == -2)
 	{
-		string buf = "Map\\";
+		string buf = "Map\\custom\\";
 		buf += FileNameBuf;
 		buf += ".map";
 		ifstream find(buf);
@@ -348,7 +354,9 @@ char DMS::ReadK_B()
 bool DMS::WriteMapToHD(string filename)
 {
 	char buf;
-	string sbuf = "Map\\";
+	string sbuf = "Map\\custom\\";
+	CreateDirectoryA("Map", NULL);
+	CreateDirectoryA("Map\\custom", NULL);
 	sbuf += FileNameBuf;
 	sbuf += ".map";
 

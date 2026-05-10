@@ -84,6 +84,9 @@
     <ClCompile Include="GameSettingScene.cpp">
       <Filter>源文件\Scenes</Filter>
     </ClCompile>
+    <ClCompile Include="StageSelectScene.cpp">
+      <Filter>源文件\Scenes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameMain.h">
@@ -138,6 +141,9 @@
       <Filter>头文件\Scenes</Filter>
     </ClInclude>
     <ClInclude Include="GameSettingScene.h">
+      <Filter>头文件\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="StageSelectScene.h">
       <Filter>头文件\Scenes</Filter>
     </ClInclude>
   </ItemGroup>

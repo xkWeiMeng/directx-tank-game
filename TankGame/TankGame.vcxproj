@@ -164,6 +164,7 @@
     <ClCompile Include="DirectX.cpp" />
     <ClCompile Include="HomeScene.cpp" />
     <ClCompile Include="Sound.cpp" />
+    <ClCompile Include="StageSelectScene.cpp" />
     <ClCompile Include="WinMain.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -184,6 +185,7 @@
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Scenes.h" />
     <ClInclude Include="Sound.h" />
+    <ClInclude Include="StageSelectScene.h" />
     <ClInclude Include="WinMain.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

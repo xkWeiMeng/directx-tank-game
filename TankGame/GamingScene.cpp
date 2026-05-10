@@ -19,6 +19,11 @@ namespace GS {
 	LPDIRECT3DTEXTURE9 Hole = NULL;
 	LPDIRECT3DTEXTURE9 Number = NULL;
 	LPDIRECT3DTEXTURE9 Flicker[9] = { NULL };
+	LPD3DXFONT AmmoFont = NULL; //弹药显示字体
+	LPD3DXFONT SidebarTitleFont = NULL;
+	LPD3DXFONT SidebarValueFont = NULL;
+	LPD3DXFONT SidebarSmallFont = NULL;
+	LPD3DXLINE SidebarLine = NULL;
 	/*变量*/
 	vector<int> BornPlayer1MapPiece;
 	vector<int> BornPlayer2MapPiece;
@@ -45,7 +50,7 @@ namespace GS {
 	void ShowGameOver();
 
 	/*辅助函数*/
-	int  Crash(int iswho, int x, int y, int speed, int dir, int shooter, unsigned long id, int, int powerLevel);
+	int  Crash(int iswho, int x, int y, int speed, int dir, int shooter, unsigned long id, int, int powerLevel, int bulletType=0);
 	void DrawMap();
 	void CreateMapPiece();
 	bool ReadMapInHD(string filename);
@@ -66,6 +71,9 @@ namespace GS {
 	bool DelListNode(AwardItemList*listhead, unsigned long id);
 	void CheckAwardCollision();
 	void DestroyAllEnemies();
+	void AddBulletToList(Bullet* b); //添加子弹到链表
+	void UpdateLaser(Player& p); //激光更新：射线检测+伤害
+	void DrawLaserBeam(Player& p); //激光渲染
 //	int  MaxNumber(int m1, int m2, int m3, int m4, bool r1, bool r2, bool r3, bool r4);
 //	int  MinNumber(int m1, int m2, int m3, int m4, bool r1, bool r2, bool r3, bool r4);
 	void DIDA();
@@ -186,7 +194,7 @@ bool GamingScene::Init()
 		ShowMessage("装载 奖励 纹理失败!");
 		return false;
 	}
-	Shield = LoadTexture(Resource::Texture::Shield, D3DCOLOR_XRGB(234, 234, 234));
+	Shield = LoadTexture(Resource::Texture::Shield, D3DCOLOR_XRGB(4, 4, 4));
 	if (!Shield)
 	{
 		ShowMessage("装载 盾牌 纹理失败!");
@@ -258,7 +266,10 @@ bool GamingScene::Init()
 	if (Global::DesignMap::NewMapName.length() != 0)
 		ReadMapInHD(Global::DesignMap::NewMapName);
 	else
+	{
+		NowLevel = Global::Home::SelectedStage;
 		ReadMapInHD("stage" + std::to_string(NowLevel));
+	}
 	//读取地图信息，创建地图块
 	CreateMapPiece();
 	//判断是否双人游戏
@@ -269,6 +280,13 @@ bool GamingScene::Init()
 	player.Born();
 	if (IsDoublePlayer)
 		player2.Born();
+	//创建弹药显示字体
+	AmmoFont = MakeFont("SimHei", 16);
+	//创建侧栏字体
+	SidebarTitleFont = MakeFont("Impact", 22);
+	SidebarValueFont = MakeFont("Consolas", 32);
+	SidebarSmallFont = MakeFont("Consolas", 18);
+	D3DXCreateLine(d3dDev, &SidebarLine);
 	return 1;
 }
 
@@ -370,6 +388,11 @@ void GamingScene::End()
 	SAFE_RELEASE(Hole);
 	SAFE_RELEASE(Number);
 	for (int i = 0; i < 9; i++) SAFE_RELEASE(Flicker[i]);
+	SAFE_RELEASE(AmmoFont);
+	SAFE_RELEASE(SidebarTitleFont);
+	SAFE_RELEASE(SidebarValueFont);
+	SAFE_RELEASE(SidebarSmallFont);
+	SAFE_RELEASE(SidebarLine);
 	if (Sound::Moving->IsSoundPlaying()) Sound::Moving->Stop();
 	if (Sound::BGM->IsSoundPlaying()) Sound::BGM->Stop();
 }
@@ -389,11 +412,154 @@ void GamingScene::Render()
 	FillRect(rect, 0, 1024, 896, 928);
 	d3dDev->StretchRect(GrayRect, NULL, backBuffer, &rect, D3DTEXF_NONE);
 
-	DrawNet();//正式版正式删除
+	DrawNet();//Debug模式下显示网格线
 			  /*游戏内容*/
 	spriteObj->Begin(D3DXSPRITE_ALPHABLEND);
-	//侧栏旗帜图标（UI装饰）
-	Sprite_Transform_Draw(Flag, 926, 704, 32, 32, 0, 1, 0, 2.0, D3DCOLOR_XRGB(255, 255, 255));
+
+	//==================== 现代侧栏面板 ====================
+	{
+		int panelX = 904; // 面板左边缘
+		int panelW = 116; // 面板宽度
+		int cx = panelX + panelW / 2; // 面板水平中心 = 962
+
+		// --- 剩余敌人区域 ---
+		if (SidebarTitleFont)
+			FontPrint(SidebarTitleFont, panelX + 8, 70, "ENEMY", D3DCOLOR_XRGB(220, 60, 60));
+		// 敌人数量大字
+		if (SidebarValueFont)
+		{
+			char enemyBuf[8];
+			sprintf_s(enemyBuf, "%d", EnemyNumber);
+			FontPrint(SidebarValueFont, cx - 10, 92, enemyBuf, D3DCOLOR_XRGB(255, 80, 80));
+		}
+		// 敌人进度条（剩余/总数30）
+		spriteObj->End();
+		if (SidebarLine)
+		{
+			SidebarLine->SetWidth(6.0f);
+			SidebarLine->SetAntialias(TRUE);
+			// 底条（暗色）
+			D3DXVECTOR2 barBg[2] = { D3DXVECTOR2((float)(panelX + 10), 132.0f), D3DXVECTOR2((float)(panelX + panelW - 10), 132.0f) };
+			SidebarLine->Begin();
+			SidebarLine->Draw(barBg, 2, D3DCOLOR_XRGB(60, 20, 20));
+			SidebarLine->End();
+			// 前景条（红色渐变）
+			float barMax = (float)(panelW - 20);
+			float barLen = barMax * min(EnemyNumber, 30) / 30.0f;
+			if (barLen > 0)
+			{
+				D3DXVECTOR2 barFg[2] = { D3DXVECTOR2((float)(panelX + 10), 132.0f), D3DXVECTOR2((float)(panelX + 10) + barLen, 132.0f) };
+				SidebarLine->Begin();
+				SidebarLine->Draw(barFg, 2, D3DCOLOR_XRGB(255, 60, 60));
+				SidebarLine->End();
+			}
+		}
+		spriteObj->Begin(D3DXSPRITE_ALPHABLEND);
+
+		// --- 分隔线（用小字符） ---
+		if (SidebarSmallFont)
+			FontPrint(SidebarSmallFont, panelX + 4, 145, "----------", D3DCOLOR_XRGB(80, 80, 80));
+
+		// --- 关卡信息 ---
+		if (SidebarTitleFont)
+			FontPrint(SidebarTitleFont, panelX + 8, 165, "STAGE", D3DCOLOR_XRGB(255, 180, 50));
+		if (SidebarValueFont)
+		{
+			char stageBuf[8];
+			sprintf_s(stageBuf, "%02d", NowLevel);
+			FontPrint(SidebarValueFont, cx - 14, 187, stageBuf, D3DCOLOR_XRGB(255, 220, 100));
+		}
+
+		// --- 分隔线 ---
+		if (SidebarSmallFont)
+			FontPrint(SidebarSmallFont, panelX + 4, 225, "----------", D3DCOLOR_XRGB(80, 80, 80));
+
+		// --- 玩家一信息 ---
+		if (SidebarTitleFont)
+			FontPrint(SidebarTitleFont, panelX + 8, 245, "1P", D3DCOLOR_XRGB(100, 200, 255));
+		// 生命
+		if (SidebarSmallFont)
+		{
+			char lifeBuf[16];
+			sprintf_s(lifeBuf, "HP  x%d", player.Lift);
+			FontPrint(SidebarSmallFont, panelX + 8, 270, lifeBuf, D3DCOLOR_XRGB(180, 255, 180));
+		}
+		// 弹药类型与数量
+		{
+			const char* btNames[] = { "NOR", "SHT", "LAS" };
+			D3DCOLOR btColors[] = {
+				D3DCOLOR_XRGB(200, 200, 200),
+				D3DCOLOR_XRGB(255, 180, 80),
+				D3DCOLOR_XRGB(80, 255, 80)
+			};
+			int bt = player.CurrentBulletType;
+			int ammo = (bt == 0) ? 99 : (bt == 1 ? player.ShotgunAmmo : player.LaserAmmo);
+			if (ammo < 0) ammo = 0;
+			if (SidebarSmallFont)
+			{
+				char ammoBuf[16];
+				sprintf_s(ammoBuf, "%s %02d", btNames[bt], ammo);
+				FontPrint(SidebarSmallFont, panelX + 8, 292, ammoBuf, btColors[bt]);
+			}
+		}
+		// 等级（星星用字符表示）
+		if (SidebarSmallFont)
+		{
+			char gradeBuf[16];
+			const char* stars[] = { "    ", "*   ", "**  ", "*** " };
+			int g = player.Grade; if (g > 3) g = 3;
+			sprintf_s(gradeBuf, "LV  %s", stars[g]);
+			FontPrint(SidebarSmallFont, panelX + 8, 314, gradeBuf, D3DCOLOR_XRGB(255, 255, 100));
+		}
+
+		// --- 玩家二信息 ---
+		if (IsDoublePlayer)
+		{
+			if (SidebarSmallFont)
+				FontPrint(SidebarSmallFont, panelX + 4, 340, "----------", D3DCOLOR_XRGB(80, 80, 80));
+			if (SidebarTitleFont)
+				FontPrint(SidebarTitleFont, panelX + 8, 360, "2P", D3DCOLOR_XRGB(255, 150, 100));
+			// 生命
+			if (SidebarSmallFont)
+			{
+				char lifeBuf2[16];
+				sprintf_s(lifeBuf2, "HP  x%d", player2.Lift);
+				FontPrint(SidebarSmallFont, panelX + 8, 385, lifeBuf2, D3DCOLOR_XRGB(180, 255, 180));
+			}
+			// 弹药
+			{
+				const char* btNames[] = { "NOR", "SHT", "LAS" };
+				D3DCOLOR btColors[] = {
+					D3DCOLOR_XRGB(200, 200, 200),
+					D3DCOLOR_XRGB(255, 180, 80),
+					D3DCOLOR_XRGB(80, 255, 80)
+				};
+				int bt = player2.CurrentBulletType;
+				int ammo = (bt == 0) ? 99 : (bt == 1 ? player2.ShotgunAmmo : player2.LaserAmmo);
+				if (ammo < 0) ammo = 0;
+				if (SidebarSmallFont)
+				{
+					char ammoBuf2[16];
+					sprintf_s(ammoBuf2, "%s %02d", btNames[bt], ammo);
+					FontPrint(SidebarSmallFont, panelX + 8, 407, ammoBuf2, btColors[bt]);
+				}
+			}
+			// 等级
+			if (SidebarSmallFont)
+			{
+				char gradeBuf2[16];
+				const char* stars2[] = { "    ", "*   ", "**  ", "*** " };
+				int g2 = player2.Grade; if (g2 > 3) g2 = 3;
+				sprintf_s(gradeBuf2, "LV  %s", stars2[g2]);
+				FontPrint(SidebarSmallFont, panelX + 8, 429, gradeBuf2, D3DCOLOR_XRGB(255, 255, 100));
+			}
+		}
+
+		// --- 旗帜图标保留在底部 ---
+		Sprite_Transform_Draw(Flag, 926, 704, 32, 32, 0, 1, 0, 2.0, D3DCOLOR_XRGB(255, 255, 255));
+	}
+	//==================== 侧栏结束 ====================
+
 	//游戏区域内基地（老鹰）— 使用砖.bmp第6帧(正常)/第7帧(击毁)
 	int eagleFrame = BaseDestroyed ? 6 : 5;
 	Sprite_Transform_Draw(Tile, FlagGameX, FlagGameY, 32, 32, eagleFrame, 7, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
@@ -403,16 +569,7 @@ void GamingScene::Render()
 		int shieldFrame = (GetTickCount() / 100) % 2;
 		Sprite_Transform_Draw(Shield, FlagGameX, FlagGameY, 32, 32, shieldFrame, 1, 0, 2.0f, D3DCOLOR_XRGB(255, 255, 255));
 	}
-	//玩家一的信息
-	Sprite_Transform_Draw(Something, 928, 512, 14, 14, 2, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-	Sprite_Transform_Draw(Something, 960, 512, 14, 14, 3, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-	Sprite_Transform_Draw(Something, 928, 544, 14, 14, 1, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-	//玩家二的信息
-	if (IsDoublePlayer) {
-		Sprite_Transform_Draw(Something, 928, 608, 14, 14, 4, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-		Sprite_Transform_Draw(Something, 960, 608, 14, 14, 3, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-		Sprite_Transform_Draw(Something, 928, 640, 14, 14, 1, 6, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-	}
+
 	//画玩家一
 	if(player.Alive)
 	player.Draw();
@@ -437,6 +594,19 @@ void GamingScene::Render()
 	{
 		bp->bullet->Draw();
 		bp = bp->next;
+	}
+	//渲染激光光线
+	if (player.LaserActive && player.Alive)
+	{
+		spriteObj->End();
+		DrawLaserBeam(player);
+		spriteObj->Begin(D3DXSPRITE_ALPHABLEND);
+	}
+	if (IsDoublePlayer && player2.LaserActive && player2.Alive)
+	{
+		spriteObj->End();
+		DrawLaserBeam(player2);
+		spriteObj->Begin(D3DXSPRITE_ALPHABLEND);
 	}
 
 	//渲染敌人
@@ -523,13 +693,34 @@ void GamingScene::Update()
 				ShootTime++;
 			if (Key_Down(Global::PlayerControl::Player1[4]) || Key_Down(0x52))
 			{
-
-				if (ShootTime > 10 / player.Attack_Speed)
+				if (player.CurrentBulletType == 2 && player.LaserAmmo > 0) //激光模式
 				{
-					player.Shoot(0, player.PowerLevel);
-					ShootTime = 0;
+					player.LaserActive = true;
+					UpdateLaser(player);
 				}
-
+				else if (player.CurrentBulletType == 2)
+				{
+					player.LaserActive = false; //弹药耗尽
+				}
+				else if (ShootTime > 10 / player.Attack_Speed)
+				{
+					if (player.CurrentBulletType == 1 && player.ShotgunAmmo <= 0)
+					{} //散弹弹药耗尽，不发射
+					else
+					{
+						player.Shoot(0, player.PowerLevel);
+						ShootTime = 0;
+					}
+				}
+			}
+			else
+			{
+				player.LaserActive = false;
+			}
+			//切换子弹类型：按切换键循环 普通→散弹→激光→普通
+			if (Key_Up(Global::PlayerControl::Player1[5]))
+			{
+				player.CurrentBulletType = (player.CurrentBulletType + 1) % 3;
 			}
 		}
 		//Player1 movement sound
@@ -575,11 +766,29 @@ void GamingScene::Update()
 					ShootTime2++;
 				if (Key_Down(Global::PlayerControl::Player2[4]))
 				{
-					if (ShootTime2 > 10 / player2.Attack_Speed)
+					if (player2.CurrentBulletType == 2 && player2.LaserAmmo > 0) //激光模式
 					{
-						player2.Shoot(0, player2.PowerLevel);
-						ShootTime2 = 0;
+						player2.LaserActive = true;
+						UpdateLaser(player2);
 					}
+					else if (player2.CurrentBulletType == 2)
+					{
+						player2.LaserActive = false;
+					}
+					else if (ShootTime2 > 10 / player2.Attack_Speed)
+					{
+						if (player2.CurrentBulletType == 1 && player2.ShotgunAmmo <= 0)
+						{}
+						else
+						{
+							player2.Shoot(0, player2.PowerLevel);
+							ShootTime2 = 0;
+						}
+					}
+				}
+				else
+				{
+					player2.LaserActive = false;
 				}
 			}
 		}
@@ -613,9 +822,25 @@ void GamingScene::Update()
 			{
 				//根据地图生成地点随机生成敌人
 				int atbuf= rand() % (BornEnemyMapPiece.size() / 2);
+				int grade = rand() % 8;
+				int speed, hp, as;
+				//根据等级分配不同属性
+				if (grade <= 1) {
+					//基础型：慢速、低血量
+					speed = 4 * 64; hp = 1; as = 1;
+				} else if (grade <= 3) {
+					//追击型：中速、中血量、较强攻击
+					speed = 5 * 64; hp = 1; as = 2;
+				} else if (grade <= 5) {
+					//快速型：高速、低血量
+					speed = 8 * 64; hp = 1; as = 1;
+				} else {
+					//重型：慢速、高血量、可破钢墙
+					speed = 3 * 64; hp = 3; as = 2;
+				}
 				CreateEnemy((BornEnemyMapPiece.at(atbuf*2)+1) * 64,
 					(BornEnemyMapPiece.at(atbuf*2+1)+1) * 64,
-					5 * 64, 1, 1, rand() % 8, rand() % 4);
+					speed, hp, as, grade, rand() % 4);
 		//		CreateEnemy((BornEnemyMapPiece.at(2)+1) * 64, (BornEnemyMapPiece.at(3)+1) * 64, 5 * 64, 1, 1, rand() % 8, rand() % 4);
 				HaveBornEnemyNumber++;
 
@@ -623,7 +848,13 @@ void GamingScene::Update()
 			else
 			{
 				HaveBornEnemyNumber++;
-				CreateEnemy(12 * 64, 12 * 64, 5 * 64, 1, 1, rand() % 8, rand() % 4);
+				int grade2 = rand() % 8;
+				int speed2, hp2, as2;
+				if (grade2 <= 1) { speed2 = 4 * 64; hp2 = 1; as2 = 1; }
+				else if (grade2 <= 3) { speed2 = 5 * 64; hp2 = 1; as2 = 2; }
+				else if (grade2 <= 5) { speed2 = 8 * 64; hp2 = 1; as2 = 1; }
+				else { speed2 = 3 * 64; hp2 = 3; as2 = 2; }
+				CreateEnemy(12 * 64, 12 * 64, speed2, hp2, as2, grade2, rand() % 4);
 			}
 			//	CreateEnemy(12 * 64, 3 * 64, 5, 1, 1, rand() % 7, rand() % 4);
 			//	CreateEnemy(4 * 64, 3 * 64, 10, 1, 1, rand() % 7, rand() % 4);
@@ -734,7 +965,7 @@ void GS::ShowGameOver()
 	}
 //专门服务于bullet::logic的碰撞检测函数
 int  GS::Crash(int iswho, int x, int y, int speed, int dir, 
-	           int shooter, unsigned long id, int movedmixel, int powerLevel) {
+	           int shooter, unsigned long id, int movedmixel, int powerLevel, int bulletType) {
 		//地图边界
 		static  RECT MapEdgeTop = { 0,0,1024,64 },
 			MapEdgeBelow = { 0,896,1024,960 },
@@ -784,7 +1015,24 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 				EnemyRect.right = ep->enemy->player.x + 56;
 				if (IntersectRect(&Rect, &EnemyRect, &BulletRect))
 				{
-					//闪烁敌人掉落星星
+					if (bulletType == 2) //激光：造成1点伤害，穿透继续
+					{
+						ep->enemy->Health_Point -= 1;
+						if (ep->enemy->Health_Point <= 0)
+						{
+							if (ep->enemy->IsFlashEnemy)
+								CreateAward(ep->enemy->player.x, ep->enemy->player.y, rand() % 6);
+							CreateBoom(ep->enemy->player.x, ep->enemy->player.y, 2, ep->enemy->Dir);
+							EnemyList* nextEp = ep->next;
+							DelListNode(enemylisthead.next, ep->enemy->ID);
+							EnemyNumber--;
+							ep = nextEp;
+							continue; //激光穿透，继续检测下一个敌人
+						}
+						ep = ep->next;
+						continue;
+					}
+					//普通/散弹：直接击杀
 					if (ep->enemy->IsFlashEnemy)
 						CreateAward(ep->enemy->player.x, ep->enemy->player.y, rand() % 6);
 					CreateBoom(ep->enemy->player.x, ep->enemy->player.y, 2, ep->enemy->Dir);
@@ -839,7 +1087,7 @@ int  GS::Crash(int iswho, int x, int y, int speed, int dir,
 			BulletRectTest.left = bp->bullet->bullet.x;
 			if (IntersectRect(&Rect, &BulletRectTest, &BulletRect))
 			{
-				if (id != bp->bullet->ID)
+				if (id != bp->bullet->ID && shooter != bp->bullet->Shooter)
 				{
 					AddUselessObj(bp->bullet->ID);
 					return 1;
@@ -1404,6 +1652,7 @@ void GS::ReadMap(int x, int y, RECT&rect1, RECT&rect2)
 //绘制网格线
 void GS::DrawNet()
 	{
+		if (!Global::Debug::ShowDebugInfo) return;
 		RECT rect;
 		for (int i = 0; i < 12; i++)
 		{
@@ -1781,38 +2030,199 @@ GameScene的方法到此结束
 ----------------------------------------------------------------------*/
 
 //敌人AI
-int* idiot(int state, bool cflag)
+//计算朝向目标的方向
+int DirToward(float fromX, float fromY, float toX, float toY)
+{
+	float dx = toX - fromX;
+	float dy = toY - fromY;
+	if (abs(dx) > abs(dy))
+		return dx > 0 ? Dirction::right : Dirction::lift;
+	else
+		return dy > 0 ? Dirction::below : Dirction::up;
+}
+
+// Grade 0-1: 基础AI（笨拙型）
+// 碰墙后随机转向，很少射击，随机游走
+int* ai_basic(int state, bool cflag)
 {
 	static int a[2];
 	if (cflag)
 	{
-		if ((rand() % 5) == 1)
+		if (rand() % 8 == 0)
 		{
 			a[0] = state;
-		a[1] = 1;//射击
+			a[1] = 1;
 			return a;
 		}
 		a[0] = rand() % 4;
 		a[1] = 0;
 		return a;
 	}
-	if ((rand() % 100) == 1)
+	if (rand() % 150 == 0)
 	{
 		a[0] = state;
 		a[1] = 1;
 		return a;
 	}
-	if ((rand() % 60) == 13)
+	if (rand() % 80 == 0)
 	{
 		a[0] = rand() % 4;
 		a[1] = 0;
 		return a;
 	}
-
 	a[0] = state;
 	a[1] = 0;
 	return a;
+}
 
+// Grade 2-3: 追击型AI
+// 概率性追踪玩家，频繁射击
+int* ai_aggressive(int state, bool cflag, float ex, float ey)
+{
+	static int a[2];
+	float targetX = Player1.player.x;
+	float targetY = Player1.player.y;
+	//双人模式选择更近的玩家
+	if (IsDoublePlayer && player2.Alive)
+	{
+		float d1 = abs(ex - Player1.player.x) + abs(ey - Player1.player.y);
+		float d2 = abs(ex - player2.player.x) + abs(ey - player2.player.y);
+		if (d2 < d1)
+		{
+			targetX = player2.player.x;
+			targetY = player2.player.y;
+		}
+	}
+
+	if (cflag)
+	{
+		//碰墙时高概率射击
+		if (rand() % 3 == 0)
+		{
+			a[0] = state;
+			a[1] = 1;
+			return a;
+		}
+		//碰墙时70%朝向玩家，30%随机
+		if (rand() % 10 < 7)
+			a[0] = DirToward(ex, ey, targetX, targetY);
+		else
+			a[0] = rand() % 4;
+		a[1] = 0;
+		return a;
+	}
+	//频繁射击（约每50帧1次）
+	if (rand() % 50 == 0)
+	{
+		a[0] = state;
+		a[1] = 1;
+		return a;
+	}
+	//较高概率追踪玩家方向
+	if (rand() % 40 == 0)
+	{
+		a[0] = DirToward(ex, ey, targetX, targetY);
+		a[1] = 0;
+		return a;
+	}
+	//偶尔随机变向增加不可预测性
+	if (rand() % 100 == 0)
+	{
+		a[0] = rand() % 4;
+		a[1] = 0;
+		return a;
+	}
+	a[0] = state;
+	a[1] = 0;
+	return a;
+}
+
+// Grade 4-5: 快速型AI
+// 频繁变向，到处乱窜，射击中等频率
+int* ai_fast(int state, bool cflag)
+{
+	static int a[2];
+	if (cflag)
+	{
+		//碰墙时立即转向，偶尔射击
+		if (rand() % 5 == 0)
+		{
+			a[0] = state;
+			a[1] = 1;
+			return a;
+		}
+		a[0] = rand() % 4;
+		a[1] = 0;
+		return a;
+	}
+	//中等频率射击
+	if (rand() % 70 == 0)
+	{
+		a[0] = state;
+		a[1] = 1;
+		return a;
+	}
+	//非常频繁地随机变向（闪避型移动）
+	if (rand() % 25 == 0)
+	{
+		a[0] = rand() % 4;
+		a[1] = 0;
+		return a;
+	}
+	a[0] = state;
+	a[1] = 0;
+	return a;
+}
+
+// Grade 6-7: 重型/智能AI
+// 以基地为目标，高HP，破坏力强，会主动摧毁挡路的墙
+int* ai_heavy(int state, bool cflag, float ex, float ey)
+{
+	static int a[2];
+	//主要目标是基地
+	float targetX = (float)FlagGameX;
+	float targetY = (float)FlagGameY;
+
+	if (cflag)
+	{
+		//碰墙时必定射击（清除障碍）
+		a[0] = state;
+		a[1] = 1;
+		return a;
+	}
+	//较高射击频率（清除前方障碍）
+	if (rand() % 35 == 0)
+	{
+		a[0] = state;
+		a[1] = 1;
+		return a;
+	}
+	//80%概率朝基地方向移动
+	if (rand() % 30 == 0)
+	{
+		if (rand() % 10 < 8)
+			a[0] = DirToward(ex, ey, targetX, targetY);
+		else
+			a[0] = rand() % 4;
+		a[1] = 0;
+		return a;
+	}
+	a[0] = state;
+	a[1] = 0;
+	return a;
+}
+
+//敌人AI分发函数（根据Grade选择不同AI）
+int* enemyAI(int grade, int state, bool cflag, float ex, float ey)
+{
+	if (grade <= 1)
+		return ai_basic(state, cflag);
+	else if (grade <= 3)
+		return ai_aggressive(state, cflag, ex, ey);
+	else if (grade <= 5)
+		return ai_fast(state, cflag);
+	else
+		return ai_heavy(state, cflag, ex, ey);
 }
 //敌人的构造函数
 Enemy::Enemy(int x, int y, int speed, int hp,
@@ -1827,6 +2237,19 @@ Enemy::Enemy(int x, int y, int speed, int hp,
 	Dir = dir;
 	Time = 0;
 	IsFlashEnemy = false;
+	LastShootTime = 0;
+	//根据等级设置子弹威力
+	if (grade >= 6)
+		PowerLevel = 3; //重型可破钢墙
+	else
+		PowerLevel = 0;
+	//根据等级设置子弹速度
+	if (grade >= 4 && grade <= 5)
+		BulletSpeed = 12 * 64; //快速型子弹也快
+	else if (grade >= 6)
+		BulletSpeed = 8 * 64;
+	else
+		BulletSpeed = 6 * 64;
 }
 //敌人的渲染方法
 bool Enemy::Draw()
@@ -1869,11 +2292,20 @@ bool Enemy::Draw()
 //敌人逻辑
 bool Enemy::Logic(bool st)
 {
-	int *a=idiot(Dir, CrashingFlag);
+	int *a=enemyAI(Grade, Dir, CrashingFlag, player.x, player.y);
 	CrashingFlag = false;
 	int d = *a;
 	if (*(a + 1) == 1)
-		Shoot(2,PowerLevel);
+	{
+		//射击冷却：根据Attack_Speed决定间隔（as=1→3秒，as=2→2秒）
+		int cooldown = 3000 / (Attack_Speed > 0 ? Attack_Speed : 1);
+		int now = GetTickCount();
+		if (now - LastShootTime >= cooldown)
+		{
+			Shoot(2, PowerLevel);
+			LastShootTime = now;
+		}
+	}
 	/**
 	if (st)
 		Time++;
@@ -2365,6 +2797,13 @@ Player::Player()
 	Attack_Speed = 3;
 	Dir = Dirction::up;
 	Grade = 0;
+	CurrentBulletType = 0; //默认普通子弹
+	LaserActive = false;
+	LaserLastDamageTime = 0;
+	LaserEndX = 0;
+	LaserEndY = 0;
+	ShotgunAmmo = 99;
+	LaserAmmo = 99;
 	player.scaling = 2;
 	player.columns = 8; 
 	player.frame = 0;
@@ -2418,20 +2857,17 @@ void Player::LevelUp()
 		ApplyGradeStats();
 	}
 }
-//射击方法
-bool Player::Shoot(int shooter,int powlv) {
-	Bullet*b = new Bullet(shooter,Player::player.x,Player::player.y,
-		Player::BulletSpeed, Player::Dir,powlv);
+//添加子弹到链表
+void GS::AddBulletToList(Bullet* b)
+{
 	IDNumber++;
 	b->ID = IDNumber;
-	if (b == NULL)
-		return false;
 	BulletList*c = bulletlisthead.next;
 	if (c == NULL)
 	{
-		bulletlisthead.next = new BulletList;//在子弹链表里添加子弹对象
+		bulletlisthead.next = new BulletList;
 		bulletlisthead.next->bullet = b;
-		bulletlisthead.next->next = c;
+		bulletlisthead.next->next = NULL;
 		bulletlisthead.next->last = NULL;
 	}
 	else
@@ -2452,7 +2888,247 @@ bool Player::Shoot(int shooter,int powlv) {
 			d->next = NULL;
 		}
 	}
+}
+//激光更新：从玩家位置沿方向射线检测，找到终点，并对路径上敌人造成伤害
+void GS::UpdateLaser(Player& p)
+{
+	//起点：玩家中心
+	float startX = p.player.x + 28;
+	float startY = p.player.y + 28;
+	float endX = startX, endY = startY;
+	//沿方向延伸到边界
+	switch (p.Dir)
+	{
+	case Dirction::up:    endX = startX; endY = 64; break;
+	case Dirction::below: endX = startX; endY = 896; break;
+	case Dirction::lift:  endX = 64; endY = startY; break;
+	case Dirction::right: endX = 896; endY = startY; break;
+	}
+	//射线检测墙壁：沿方向步进检查MapPiece碰撞
+	float stepX = 0, stepY = 0;
+	switch (p.Dir)
+	{
+	case Dirction::up:    stepX = 0; stepY = -4; break;
+	case Dirction::below: stepX = 0; stepY = 4; break;
+	case Dirction::lift:  stepX = -4; stepY = 0; break;
+	case Dirction::right: stepX = 4; stepY = 0; break;
+	}
+	float testX = startX, testY = startY;
+	bool hitWall = false;
+	while (!hitWall)
+	{
+		testX += stepX;
+		testY += stepY;
+		//超出边界
+		if (testX < 64 || testX > 896 || testY < 64 || testY > 896)
+		{
+			testX -= stepX;
+			testY -= stepY;
+			break;
+		}
+		//检测是否碰到不可穿越墙壁
+		int gridX = (int)testX / 64 - 1;
+		int gridY = (int)testY / 64 - 1;
+		if (gridX >= 0 && gridX < 13 && gridY >= 0 && gridY < 13)
+		{
+			MapPieceList* mp = mappiecelisthead.next;
+			while (mp != NULL)
+			{
+				if (mp->mappiece->X == gridX && mp->mappiece->Y == gridY)
+				{
+					RectList* rp = mp->mappiece->rectlisthead->next;
+					if (rp != NULL)
+					{
+						//砖墙、钢墙、水面等都阻挡激光（草地除外）
+						if (rp->rect->left < 64 || (rp->rect->left >= 96 && rp->rect->left < 128))
+						{
+							hitWall = true;
+						}
+					}
+				}
+				mp = mp->next;
+			}
+		}
+	}
+	endX = testX;
+	endY = testY;
+	p.LaserEndX = endX;
+	p.LaserEndY = endY;
+	//对路径上的敌人每秒造成1点伤害
+	int now = GetTickCount();
+	if (now - p.LaserLastDamageTime >= 1000)
+	{
+		p.LaserLastDamageTime = now;
+		p.LaserAmmo--; //每秒消耗1弹药
+		RECT laserRect;
+		switch (p.Dir)
+		{
+		case Dirction::up:
+			laserRect.left = (LONG)startX - 4;
+			laserRect.right = (LONG)startX + 4;
+			laserRect.top = (LONG)endY;
+			laserRect.bottom = (LONG)startY;
+			break;
+		case Dirction::below:
+			laserRect.left = (LONG)startX - 4;
+			laserRect.right = (LONG)startX + 4;
+			laserRect.top = (LONG)startY;
+			laserRect.bottom = (LONG)endY;
+			break;
+		case Dirction::lift:
+			laserRect.left = (LONG)endX;
+			laserRect.right = (LONG)startX;
+			laserRect.top = (LONG)startY - 4;
+			laserRect.bottom = (LONG)startY + 4;
+			break;
+		case Dirction::right:
+			laserRect.left = (LONG)startX;
+			laserRect.right = (LONG)endX;
+			laserRect.top = (LONG)startY - 4;
+			laserRect.bottom = (LONG)startY + 4;
+			break;
+		}
+		RECT Rect;
+		RECT EnemyRect;
+		EnemyList* ep = enemylisthead.next;
+		while (ep != NULL)
+		{
+			EnemyRect.left = (LONG)ep->enemy->player.x;
+			EnemyRect.top = (LONG)ep->enemy->player.y;
+			EnemyRect.right = (LONG)ep->enemy->player.x + 56;
+			EnemyRect.bottom = (LONG)ep->enemy->player.y + 56;
+			if (IntersectRect(&Rect, &EnemyRect, &laserRect))
+			{
+				ep->enemy->Health_Point -= 1;
+				if (ep->enemy->Health_Point <= 0)
+				{
+					if (ep->enemy->IsFlashEnemy)
+						CreateAward(ep->enemy->player.x, ep->enemy->player.y, rand() % 6);
+					CreateBoom(ep->enemy->player.x, ep->enemy->player.y, 2, ep->enemy->Dir);
+					EnemyList* nextEp = ep->next;
+					DelListNode(enemylisthead.next, ep->enemy->ID);
+					EnemyNumber--;
+					ep = nextEp;
+					continue;
+				}
+			}
+			ep = ep->next;
+		}
+	}
+}
+//激光渲染：画一条从玩家到终点的光线（多层叠加，带脉动效果）
+void GS::DrawLaserBeam(Player& p)
+{
+	if (!p.LaserActive || !p.Alive) return;
+	float startX = p.player.x + 28;
+	float startY = p.player.y + 28;
+	//使用D3DXLine绘制多层光线
+	ID3DXLine* pLine = NULL;
+	if (SUCCEEDED(D3DXCreateLine(d3dDev, &pLine)))
+	{
+		D3DXVECTOR2 linePoints[2];
+		linePoints[0] = D3DXVECTOR2(startX, startY);
+		linePoints[1] = D3DXVECTOR2(p.LaserEndX, p.LaserEndY);
+		//脉动效果：宽度和亮度随时间变化
+		float pulse = 0.8f + 0.4f * sin((float)GetTickCount() * 0.01f);
+		float pulse2 = 0.7f + 0.6f * sin((float)GetTickCount() * 0.025f);
+		int glowAlpha = (int)(40 * pulse2);
+		pLine->SetAntialias(TRUE);
+		//第1层：最外层光晕（宽，半透明红色）
+		pLine->SetWidth(28.0f * pulse);
+		pLine->Begin();
+		pLine->Draw(linePoints, 2, D3DCOLOR_ARGB(glowAlpha, 255, 50, 50));
+		pLine->End();
+		//第2层：外层光晕（橙红色）
+		pLine->SetWidth(18.0f * pulse);
+		pLine->Begin();
+		pLine->Draw(linePoints, 2, D3DCOLOR_ARGB((int)(60 * pulse), 255, 100, 30));
+		pLine->End();
+		//第3层：中层光芒（亮黄色）
+		pLine->SetWidth(10.0f * pulse);
+		pLine->Begin();
+		pLine->Draw(linePoints, 2, D3DCOLOR_ARGB(160, 255, 220, 80));
+		pLine->End();
+		//第4层：核心光线（白色高亮）
+		pLine->SetWidth(4.0f);
+		pLine->Begin();
+		pLine->Draw(linePoints, 2, D3DCOLOR_ARGB(255, 255, 255, 230));
+		pLine->End();
+		//命中点闪光效果
+		float flashSize = 12.0f * pulse2;
+		D3DXVECTOR2 impactH[2], impactV[2];
+		impactH[0] = D3DXVECTOR2(p.LaserEndX - flashSize, p.LaserEndY);
+		impactH[1] = D3DXVECTOR2(p.LaserEndX + flashSize, p.LaserEndY);
+		impactV[0] = D3DXVECTOR2(p.LaserEndX, p.LaserEndY - flashSize);
+		impactV[1] = D3DXVECTOR2(p.LaserEndX, p.LaserEndY + flashSize);
+		pLine->SetWidth(6.0f * pulse);
+		pLine->Begin();
+		pLine->Draw(impactH, 2, D3DCOLOR_ARGB(200, 255, 200, 50));
+		pLine->End();
+		pLine->Begin();
+		pLine->Draw(impactV, 2, D3DCOLOR_ARGB(200, 255, 200, 50));
+		pLine->End();
+		pLine->Release();
+	}
+}
+//射击方法
+bool Player::Shoot(int shooter,int powlv) {
+	if (CurrentBulletType == 1) //散弹：发射3颗子弹
+	{
+		//计算基础角度（弧度）
+		float baseAngle;
+		switch (Dir)
+		{
+		case Dirction::up:    baseAngle = 3.14159f / 2.0f; break;
+		case Dirction::right: baseAngle = 0.0f; break;
+		case Dirction::below: baseAngle = -3.14159f / 2.0f; break;
+		case Dirction::lift:  baseAngle = 3.14159f; break;
+		default: baseAngle = 0.0f; break;
+		}
+		float offsetAngle = 3.14159f / 12.0f; // 15度
+		//计算子弹起始位置
+		int bx = (int)player.x, by = (int)player.y;
+		int spreadDist = 12; //散开间距
+		switch (Dir)
+		{
+		case Dirction::up:
+			bx = (int)player.x + 20; by = (int)player.y;
+			//中间子弹
+			{ Bullet*b0 = new Bullet(shooter, bx, by, BulletSpeed, baseAngle, powlv, 1); AddBulletToList(b0); }
+			//左侧子弹（向左偏移）
+			{ Bullet*b1 = new Bullet(shooter, bx - spreadDist, by, BulletSpeed, baseAngle + offsetAngle, powlv, 1); AddBulletToList(b1); }
+			//右侧子弹（向右偏移）
+			{ Bullet*b2 = new Bullet(shooter, bx + spreadDist, by, BulletSpeed, baseAngle - offsetAngle, powlv, 1); AddBulletToList(b2); }
+			break;
+		case Dirction::below:
+			bx = (int)player.x + 20; by = (int)player.y + 40;
+			{ Bullet*b0 = new Bullet(shooter, bx, by, BulletSpeed, baseAngle, powlv, 1); AddBulletToList(b0); }
+			{ Bullet*b1 = new Bullet(shooter, bx - spreadDist, by, BulletSpeed, baseAngle - offsetAngle, powlv, 1); AddBulletToList(b1); }
+			{ Bullet*b2 = new Bullet(shooter, bx + spreadDist, by, BulletSpeed, baseAngle + offsetAngle, powlv, 1); AddBulletToList(b2); }
+			break;
+		case Dirction::lift:
+			bx = (int)player.x; by = (int)player.y + 20;
+			{ Bullet*b0 = new Bullet(shooter, bx, by, BulletSpeed, baseAngle, powlv, 1); AddBulletToList(b0); }
+			{ Bullet*b1 = new Bullet(shooter, bx, by - spreadDist, BulletSpeed, baseAngle - offsetAngle, powlv, 1); AddBulletToList(b1); }
+			{ Bullet*b2 = new Bullet(shooter, bx, by + spreadDist, BulletSpeed, baseAngle + offsetAngle, powlv, 1); AddBulletToList(b2); }
+			break;
+		case Dirction::right:
+			bx = (int)player.x + 40; by = (int)player.y + 20;
+			{ Bullet*b0 = new Bullet(shooter, bx, by, BulletSpeed, baseAngle, powlv, 1); AddBulletToList(b0); }
+			{ Bullet*b1 = new Bullet(shooter, bx, by - spreadDist, BulletSpeed, baseAngle + offsetAngle, powlv, 1); AddBulletToList(b1); }
+			{ Bullet*b2 = new Bullet(shooter, bx, by + spreadDist, BulletSpeed, baseAngle - offsetAngle, powlv, 1); AddBulletToList(b2); }
+			break;
+		}
+		ShotgunAmmo--; //消耗散弹弹药
 		return true;
+	}
+	else //普通子弹
+	{
+		Bullet*b = new Bullet(shooter,Player::player.x,Player::player.y,
+			Player::BulletSpeed, Player::Dir,powlv, 0);
+		AddBulletToList(b);
+		return true;
+	}
 }
 //玩家渲染方法
 bool Player::Draw()
@@ -3012,10 +3688,13 @@ void Player2::Born()
 ----------------------------------------------------------------------*/
 
 //子弹的构造函数
-Bullet::Bullet(int shooter,int x, int y, int S, int D,int powlv) :Speed(S), Dir(D),Shooter(shooter)
+Bullet::Bullet(int shooter,int x, int y, int S, int D,int powlv, int btype) :Speed(S), Dir(D),Shooter(shooter)
 {
 	BoomFlag = 0;
 	PowerLevel = powlv;
+	BulletType = btype;
+	VelX = 0;
+	VelY = 0;
 	bullet.width = 16;
 	bullet.height = 16;
 	FlickerFrame = 0;
@@ -3025,22 +3704,42 @@ Bullet::Bullet(int shooter,int x, int y, int S, int D,int powlv) :Speed(S), Dir(
 	case Dirction::up:
 		bullet.x = x + 20;
 		bullet.y = y;
+		VelX = 0; VelY = -(float)S;
 		break;
 	case Dirction::below:
 		bullet.x = x+20;
 		bullet.y = y+40;
+		VelX = 0; VelY = (float)S;
 		break;
 	case Dirction::lift:
 		bullet.x = x;
 		bullet.y = y+20;
+		VelX = -(float)S; VelY = 0;
 		break;
 	case Dirction::right:
 		bullet.x = x + 40;
 		bullet.y = y + 20;
+		VelX = (float)S; VelY = 0;
 		break;
 	default:
 		break;
 	}
+}
+//斜向子弹构造（散弹用）
+Bullet::Bullet(int shooter, int x, int y, int speed, float angle, int powlv, int btype)
+	:Speed(speed), Dir(Dirction::up), Shooter(shooter)
+{
+	BoomFlag = 0;
+	PowerLevel = powlv;
+	BulletType = btype;
+	bullet.width = 16;
+	bullet.height = 16;
+	FlickerFrame = 0;
+	LastFrametime = GetTickCount();
+	VelX = speed * cos(angle);
+	VelY = -speed * sin(angle); //屏幕Y轴向下
+	bullet.x = (float)x;
+	bullet.y = (float)y;
 }
 //子弹移动和碰撞检测方法
 bool Bullet::Logic()
@@ -3048,25 +3747,11 @@ bool Bullet::Logic()
 	//碰撞检测
 	 double srtime = GetTickCount() - lasttime;
 	MovedPixel = Speed*srtime / 1000;
-	switch (Dir)
-	{
-	case Dirction::up:
-		bullet.y = bullet.y- MovedPixel;
-		break;
-	case Dirction::below:
-		bullet.y = bullet.y + MovedPixel;
-		break;
-	case Dirction::lift:
-		bullet.x = bullet.x- MovedPixel;
-		break;
-	case Dirction::right:
-		bullet.x = bullet.x+ MovedPixel;
-		break;
-	default:
-		break;
-	}
+	//使用速度分量移动（支持斜向）
+	bullet.x = bullet.x + VelX * (float)srtime / 1000.0f;
+	bullet.y = bullet.y + VelY * (float)srtime / 1000.0f;
 
-    int result = Crash( 0,bullet.x, bullet.y, Speed, Dir,Shooter,ID, MovedPixel, PowerLevel);
+    int result = Crash( 0,bullet.x, bullet.y, Speed, Dir,Shooter,ID, MovedPixel, PowerLevel, BulletType);
 	if (result == 1)
 	{
 		if(PowerLevel==0)
@@ -3093,26 +3778,42 @@ bool Bullet::Logic()
 bool Bullet::Draw()
 {
 	if (BoomFlag == 0) {
-		switch (Dir)
+		//根据子弹类型设置颜色
+		D3DCOLOR bulletColor = D3DCOLOR_XRGB(255, 255, 255); //普通：白色
+		if (BulletType == 1) bulletColor = D3DCOLOR_XRGB(255, 200, 100); //散弹：橙色
+		if (BulletType == 2) bulletColor = D3DCOLOR_XRGB(100, 255, 100); //激光：绿色
+
+		//散弹使用旋转角度渲染
+		if (BulletType == 1 && (VelX != 0 || VelY != 0))
 		{
-		case Dirction::up:
+			float angle = atan2(-VelY, VelX); //屏幕Y轴反向
+			float rotation = -angle + 3.14159f / 2.0f; //转换到D3D旋转（0=朝上）
 			Sprite_Transform_Draw(Bullet_TXTTURE, bullet.x, bullet.y,
-				8, 8, 0, 4, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-			break;
-		case Dirction::below:
-			Sprite_Transform_Draw(Bullet_TXTTURE, bullet.x, bullet.y,
-				8, 8, 2, 4, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-			break;
-		case Dirction::lift:
-			Sprite_Transform_Draw(Bullet_TXTTURE, bullet.x, bullet.y,
-				8, 8, 3, 4, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-			break;
-		case Dirction::right:
-			Sprite_Transform_Draw(Bullet_TXTTURE, bullet.x, bullet.y,
-				8, 8, 1, 4, 0, 2, D3DCOLOR_XRGB(255, 255, 255));
-			break;
-		default:
-			break;
+				8, 8, 0, 4, rotation, 2, bulletColor);
+		}
+		else
+		{
+			switch (Dir)
+			{
+			case Dirction::up:
+				Sprite_Transform_Draw(Bullet_TXTTURE, bullet.x, bullet.y,
+					8, 8, 0, 4, 0, 2, bulletColor);
+				break;
+			case Dirction::below:
+				Sprite_Transform_Draw(Bullet_TXTTURE, bullet.x, bullet.y,
+					8, 8, 2, 4, 0, 2, bulletColor);
+				break;
+			case Dirction::lift:
+				Sprite_Transform_Draw(Bullet_TXTTURE, bullet.x, bullet.y,
+					8, 8, 3, 4, 0, 2, bulletColor);
+				break;
+			case Dirction::right:
+				Sprite_Transform_Draw(Bullet_TXTTURE, bullet.x, bullet.y,
+					8, 8, 1, 4, 0, 2, bulletColor);
+				break;
+			default:
+				break;
+			}
 		}
 		if (PowerLevel == 3)
 		{
@@ -3121,7 +3822,7 @@ bool Bullet::Draw()
 				FlickerFrame = FlickerFrame < 8 ? FlickerFrame + 1 : 0;
 				LastFrametime = GetTickCount();
 			}
-			Sprite_Draw_Frame(Flicker[FlickerFrame], bullet.x - 392, bullet.y - 292, 0, 800, 600, 1);
+			Sprite_Transform_Draw(Flicker[FlickerFrame], bullet.x - 125, bullet.y - 92, 800, 600, 0, 1, 0, 1.0f/3.0f, 1.0f/3.0f, D3DCOLOR_XRGB(255, 255, 255));
 		}
 		return true;
 	}
@@ -3589,7 +4290,7 @@ bool MapPiece::BeingCrash(bool flag2, RECT & rect, int dir, int x, int y, int po
 						rectlisthead->next = NULL;
 					}
 					delete rp;
-					rp = rectlisthead->next;
+					break; //顶级子弹只打掉一层钢墙
 				}
 				else
 				{

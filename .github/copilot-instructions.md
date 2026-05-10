@@ -57,14 +57,7 @@ DirectX 9.0c with D3DXSprite for 2D rendering. Key functions:
 - `MakeFont()` / `FontPrint()` — text rendering
 - `Collision()` (AABB) / `CollisionD()` (distance-based) — collision detection
 
-`Sprite_Transform_Draw(texture, x, y, width, height, frame, columns, rotation, scaling, color)` — the `color` parameter is a tint filter (white = no tint), not a color key. Color keys are set at `LoadTexture()` time.
-
-Key sprite layouts:
-- **Player** (`玩家一.bmp`): 224×112, 8 columns, 28×28 per frame. Frame = `Dir * 8 + Grade * 2 + (0|1)` for walk animation
-- **Enemy** (`敌人.bmp`): same layout as Player
-- **Award** (`奖励.bmp`): 180×28, 6 columns, 30×28 per frame
-- **Tile** (`砖.bmp`): 7 columns, 32×32 (see Tile Texture Layout)
-- **Shield** (`盾牌.bmp`): 32×64, 2 frames of 32×32 for invincibility animation
+`Sprite_Transform_Draw(texture, x, y, width, height, frame, columns, rotation, scaling, color)` — the `color` parameter is a tint filter (white = no tint), not a color key. Color keys are set at `LoadTexture()` time. See [Resource Inventory](#resource-inventory) for all sprite dimensions, frame counts, and color keys.
 
 Render order: scene content → debug info → cursor (topmost).
 
@@ -182,6 +175,92 @@ Manual `new`/`delete` throughout. DirectX COM objects released via `SAFE_RELEASE
 - Variables: mixed camelCase (`mousePoint`, `bulletlisthead`)
 - Globals/namespaces: PascalCase (`Global::Window`, `Resource::Texture`)
 - DirectX types use Win32 Hungarian notation (`LPDIRECT3DTEXTURE9`, `HWND`)
+
+## Resource Inventory
+
+All resource paths are centralized in `Resource.h` (`Resource::*` namespaces). Some files are loaded dynamically with hardcoded paths. When adding/modifying resources, update both the file on disk and the corresponding `Resource.h` entry.
+
+### Texture Spritesheets (`Resources/Texture/`)
+
+All textures load via `LoadTexture()` with a color key for transparency. The color key removes a specific color from the image (makes it transparent); it is NOT the same as the tint parameter in `Sprite_Transform_Draw()`.
+
+| File | Const | Frame W×H | Cols | Total Frames | Color Key | Notes |
+|------|-------|-----------|------|-------------|-----------|-------|
+| `玩家一.bmp` | `Player_1` | 28×28 | 8 | 32 | `(0,0,0)` black | 224×112 sheet. Frame = `Dir*8 + Grade*2 + (0\|1)` |
+| `玩家二.bmp` | `Player_2` | 28×28 | 8 | 32 | `(0,0,0)` black | Same layout as Player 1 |
+| `敌人.bmp` | `Enemy` | 28×28 | 8 | 32 | `(4,4,4)` near-black | Same layout as Players |
+| `砖.bmp` | `Tile` | 32×32 | 7 | 7 | `(4,4,4)` near-black | See [Tile Texture Layout](#tile-texture-layout-砖bmp). Sub-tiles use 16×16 |
+| `子弹.bmp` | `Bullet` | 8×8 | 4 | 4 | `(4,4,4)` near-black | One frame per direction |
+| `爆炸一.bmp` | `Boom1` | 28×28 | 1 | 1 | `(0,0,0)` black | Small explosion |
+| `爆炸二.bmp` | `Boom2` | 64×64 | 1 | 1 | `(4,4,4)` near-black | Large explosion |
+| `奖励.bmp` | `Award` | 30×28 | 6 | 6 | `(234,234,234)` light gray | 180×28 sheet. See [Power-Up System](#power-up-system-awarditem) |
+| `盾牌.bmp` | `Shield` | 32×32 | 1 | 2 | `(4,4,4)` near-black | 32×64 sheet. Invincibility overlay animation |
+| `游戏结束.bmp` | `GameOver` | 248×160 | 1 | 1 | `(0,0,0)` black | Rendered at 2× scale |
+| `旗子.bmp` | `Flag` | 32×32 | 1 | 1 | `(255,255,255)` white | Sidebar flag icon |
+| `数字.bmp` | `Number` | 14×14 | 10 | 10 | `(255,255,255)` white | Digits 0-9 for HUD |
+| `杂项.bmp` | `Something` | — | — | — | `(255,255,255)` white | Loaded but never drawn (dead code) |
+| `孔.bmp` | `Hole` | — | — | — | `(4,4,4)` near-black | Loaded but never drawn (dead code) |
+| `0.png`–`8.png` | *(hardcoded)* | 800×600 | 1 | 9 total | `(0,0,0)` black | Flicker/transition animation. Loaded dynamically in `GamingScene::Init()` |
+| `GameSetting.png` | `GameSetting` | — | — | — | — | **Declared in Resource.h but never loaded** |
+
+Unreferenced files on disk (orphans): `面包.png`, `wxz.png`
+
+### About Scene Textures (`Resources/About/`)
+
+| File | Const | Color Key | Notes |
+|------|-------|-----------|-------|
+| `天空背景.JPG` | `SkyBG` | none | Full-screen sky background |
+| `山景-远景.PNG` | `MountainFar` | `(255,255,255)` white | Parallax distant mountains |
+| `前景-树草.png` | `ForegroundGrass` | `(255,255,255)` white | Foreground trees/grass layer |
+| `前景-地面.png` | `ForegroundGround` | `(255,255,255)` white | Foreground ground layer |
+| `云朵精灵表.PNG` | `CloudSheet` | `(255,255,255)` white | 384×320, 4 cols × 2 rows spritesheet |
+| `飞艇精灵表.PNG` | `AirshipSheet` | `(255,255,255)` white | 896×400, 4 cols × 2 rows spritesheet |
+| `树叶精灵表.png` | `LeafSheet` | `(255,255,255)` white | 128×128, 4 cols × 2 rows spritesheet |
+
+Legacy / unused (declared in `Resource.h` but never loaded): `作者.jpg`, `山景.bmp`, `云1.png`, `云2.png`, `云3.png`, `飞艇.tga`
+
+Unreferenced files on disk (orphans): `前景-树草9.png`, `山景.PNG`
+
+### Home / Cursor / Sound
+
+| Directory | File | Const | Status |
+|-----------|------|-------|--------|
+| `Home/` | `UI.bmp` | `Home::Backgroud` | **Declared but never loaded** |
+| `Cursor/` | `光标.png` | `Cursor::Normal` | Active — custom cursor |
+
+Unreferenced files: `Home/1.bmp`, `Home/Background.jpg`, `Cursor/Normal.png`
+
+### Sound Files (`Resources/Sound/`)
+
+| File | Const | Used for |
+|------|-------|----------|
+| `开始1.wav` | `Start` | Game start SFX |
+| `坦克移动.wav` | `Moving` | Tank move loop |
+| `坦克停止移动.wav` | `Stop` | Tank stop SFX |
+| `BGM.wav` | `BGM` | Background music |
+| `爆炸.wav` | `PlayerBoom` | Explosion SFX |
+
+**Known issue**: `Resource::Sound_Rescource::BGM` references `"bgm.wav"` (lowercase) but the file on disk is `BGM.wav` — works on case-insensitive NTFS but would break on case-sensitive filesystems.
+
+**Missing**: `游戏结束.aif` is declared in Resource.h but does not exist on disk (loading code is commented out).
+
+### Map Files (`Map/`)
+
+Maps are 169-byte binary files (13×13 grid). Loaded dynamically by name — no `Resource.h` entries.
+
+| Pattern | Loader | Notes |
+|---------|--------|-------|
+| `Map/stage{N}.map` | `StageSelectScene` scans `stage1..stageN` sequentially | Currently only `stage1.map`, `stage2.map`, `stage7.map` exist |
+| `Map/custom/*.map` | `StageSelectScene` via `FindFirstFileA` glob | User-created maps from DesignMapScene |
+| `Map/{name}.map` | `GamingScene` loads by exact name | |
+
+**Missing stages**: `stage3.map`–`stage6.map` don't exist (only `*_backup.map` variants). The stage scanner stops at the first gap, so `stage7.map` is unreachable unless `stage3`–`stage6` are restored from backups.
+
+Backup/test files on disk: `stage1_backup.map`–`stage6_backup.map`, `test.map`, `test.txt`, `xczxc.map`, `xk1.map`
+
+### Settings File
+
+`GameSet.set` — 11 bytes of binary (Player1 keybindings[5] + Player2 keybindings[5] + SoundSwitch). Read in `Game_Init()`, written in `GameSettingScene`.
 
 ## How-To Patterns
 

@@ -480,6 +480,11 @@ int Mouse_Y()
 {
     return mousePoint.y;
 }
+//取得鼠标滚轮增量
+int Mouse_Z()
+{
+    return mouseState.lZ;
+}
 
 /*
 取得鼠标按键是否按下

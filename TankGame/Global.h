@@ -22,7 +22,9 @@ enum GAME_STATE
     //关于场景
     About = 5,
 	//游戏设置界面
-	GameSatting=6
+	GameSatting=6,
+	//选关界面
+	StageSelect=7
 };
 namespace Global {
     namespace Window {
@@ -52,10 +54,12 @@ namespace Global {
     namespace Home {
         //最终的选项 0=单人游戏 1=双人游戏 2=设计地图 3=关于作者
         extern int selectedType;
+		//选择的关卡编号，0=从第1关开始
+		extern int SelectedStage;
     }
     namespace Debug {
         //是否显示调试信息
-        const bool ShowDebugInfo = true;
+        extern bool ShowDebugInfo;
         //当前的帧率
         extern int currentFPS;
     }
@@ -65,9 +69,9 @@ namespace Global {
 	}
 	namespace PlayerControl {
 			//玩家一的控制方式
-		extern  int Player1[5];
+		extern  int Player1[6];
 			//玩家二的控制方式
-		extern  int Player2[5];
+		extern  int Player2[6];
 	}
 	namespace Sound {
 		//声音开关

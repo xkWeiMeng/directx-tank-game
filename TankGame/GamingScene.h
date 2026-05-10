@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include<fstream>
 #include<vector>
+#include<cmath>
 #include"Scene.h"
 #include"DirectX.h"
 #include"Global.h"
@@ -22,7 +23,10 @@ public:
 	unsigned long ID;
 	int BoomFlag;
 	int  PowerLevel;
-	Bullet(int,int ,int,int,int,int);//子弹初始化
+	int BulletType; // 0=普通, 1=散弹, 2=激光
+	float VelX, VelY; // 速度分量（散弹斜向移动用）
+	Bullet(int,int ,int,int,int,int,int bulletType=0);//子弹初始化
+	Bullet(int shooter, int x, int y, int speed, float angle, int powlv, int bulletType);//斜向子弹
 	bool Logic();//子弹碰撞检测
 	bool Draw();
 	int FlickerFrame;
@@ -64,6 +68,12 @@ public:
 	int Dir;//玩家方向
 	int Grade;//玩家等级
 	int PowerLevel;
+	int CurrentBulletType; // 0=普通, 1=散弹, 2=激光
+	bool LaserActive; //激光是否正在发射
+	int LaserLastDamageTime; //激光上次造成伤害的时间
+	float LaserEndX, LaserEndY; //激光终点坐标
+	int ShotgunAmmo; //散弹弹药
+	int LaserAmmo; //激光弹药
 	bool Alive;//存在标志
 	bool FlashFlag;//闪光标志
 	int InvincibleEndTime;//无敌结束时间（GetTickCount）
@@ -95,6 +105,7 @@ public:
 	unsigned long ID;
 	int Time;
 	bool IsFlashEnemy;//闪烁敌人标志
+	int LastShootTime;//上次射击时间（GetTickCount）
 };
 
 
