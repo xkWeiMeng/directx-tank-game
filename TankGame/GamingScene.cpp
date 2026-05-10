@@ -2031,6 +2031,7 @@ GameScene的方法到此结束
 
 //敌人AI
 //计算朝向目标的方向
+//计算朝向目标的方向
 int DirToward(float fromX, float fromY, float toX, float toY)
 {
 	float dx = toX - fromX;
@@ -2041,14 +2042,130 @@ int DirToward(float fromX, float fromY, float toX, float toY)
 		return dy > 0 ? Dirction::below : Dirction::up;
 }
 
+//检测敌人是否面对目标（在同一行或列，且方向正确）
+//tolerance: 允许的偏差像素数（目标与敌人在垂直于方向轴上的偏差）
+bool IsFacingTarget(int dir, float ex, float ey, float tx, float ty, float tolerance = 40.0f)
+{
+	switch (dir)
+	{
+	case Dirction::up:
+		return ty < ey && abs(ex - tx) < tolerance;
+	case Dirction::below:
+		return ty > ey && abs(ex - tx) < tolerance;
+	case Dirction::lift:
+		return tx < ex && abs(ey - ty) < tolerance;
+	case Dirction::right:
+		return tx > ex && abs(ey - ty) < tolerance;
+	}
+	return false;
+}
+
+//检测是否有玩家子弹正飞向此敌人（需要躲避）
+//返回值：-1=安全，否则返回建议闪避方向
+int DetectIncomingBullet(float ex, float ey)
+{
+	BulletList* bp = bulletlisthead.next;
+	while (bp != NULL)
+	{
+		Bullet* b = bp->bullet;
+		//只检测玩家发出的子弹（Shooter != 2）
+		if (b->Shooter != 2)
+		{
+			float bx = b->bullet.x;
+			float by = b->bullet.y;
+			float dangerDist = 200.0f; //危险距离
+			float hitWidth = 60.0f;    //命中判定宽度
+
+			switch (b->Dir)
+			{
+			case Dirction::up:
+				//子弹向上飞，敌人在子弹上方
+				if (by > ey && by - ey < dangerDist && abs(bx - ex) < hitWidth)
+					return (ex < bx) ? Dirction::lift : Dirction::right;
+				break;
+			case Dirction::below:
+				//子弹向下飞，敌人在子弹下方
+				if (ey > by && ey - by < dangerDist && abs(bx - ex) < hitWidth)
+					return (ex < bx) ? Dirction::lift : Dirction::right;
+				break;
+			case Dirction::lift:
+				//子弹向左飞，敌人在子弹左边
+				if (bx > ex && bx - ex < dangerDist && abs(by - ey) < hitWidth)
+					return (ey < by) ? Dirction::up : Dirction::below;
+				break;
+			case Dirction::right:
+				//子弹向右飞，敌人在子弹右边
+				if (ex > bx && ex - bx < dangerDist && abs(by - ey) < hitWidth)
+					return (ey < by) ? Dirction::up : Dirction::below;
+				break;
+			}
+		}
+		bp = bp->next;
+	}
+	return -1;
+}
+
+//检测是否面对任何一个玩家（用于判断射击时机）
+bool IsFacingAnyPlayer(int dir, float ex, float ey)
+{
+	if (Player1.player.alive)
+	{
+		if (IsFacingTarget(dir, ex, ey, Player1.player.x, Player1.player.y))
+			return true;
+	}
+	if (IsDoublePlayer && player2.Alive)
+	{
+		if (IsFacingTarget(dir, ex, ey, player2.player.x, player2.player.y))
+			return true;
+	}
+	return false;
+}
+
+//获取朝向最近玩家对齐位置的方向（侧移对齐，为射击做准备）
+//返回让敌人移动到与目标同行/列的方向
+int GetFlankDir(float ex, float ey, float tx, float ty, int preferAxis)
+{
+	//preferAxis: 0=优先上下对齐（准备左右射击），1=优先左右对齐（准备上下射击）
+	if (preferAxis == 0)
+	{
+		//需要左右对齐：调整Y坐标
+		if (abs(ey - ty) > 32)
+			return ey > ty ? Dirction::up : Dirction::below;
+		else
+			return ex > tx ? Dirction::lift : Dirction::right;
+	}
+	else
+	{
+		//需要上下对齐：调整X坐标
+		if (abs(ex - tx) > 32)
+			return ex > tx ? Dirction::lift : Dirction::right;
+		else
+			return ey > ty ? Dirction::up : Dirction::below;
+	}
+}
+
 // Grade 0-1: 基础AI（笨拙型）
-// 碰墙后随机转向，很少射击，随机游走
-int* ai_basic(int state, bool cflag)
+// 简单巡逻，碰墙转向，偶尔对着玩家方向射击
+int* ai_basic(int state, bool cflag, float ex, float ey)
 {
 	static int a[2];
+
+	//偶尔检测子弹并闪避（概率较低，反应迟钝）
+	if (rand() % 3 == 0)
+	{
+		int dodge = DetectIncomingBullet(ex, ey);
+		if (dodge >= 0)
+		{
+			a[0] = dodge;
+			a[1] = 0;
+			return a;
+		}
+	}
+
 	if (cflag)
 	{
-		if (rand() % 8 == 0)
+		//碰墙：如果面对玩家则射击
+		if (IsFacingAnyPlayer(state, ex, ey))
 		{
 			a[0] = state;
 			a[1] = 1;
@@ -2058,12 +2175,14 @@ int* ai_basic(int state, bool cflag)
 		a[1] = 0;
 		return a;
 	}
-	if (rand() % 150 == 0)
+	//面对玩家时有一定概率射击
+	if (IsFacingAnyPlayer(state, ex, ey) && rand() % 20 == 0)
 	{
 		a[0] = state;
 		a[1] = 1;
 		return a;
 	}
+	//偶尔随机变向
 	if (rand() % 80 == 0)
 	{
 		a[0] = rand() % 4;
@@ -2076,7 +2195,7 @@ int* ai_basic(int state, bool cflag)
 }
 
 // Grade 2-3: 追击型AI
-// 概率性追踪玩家，频繁射击
+// 主动追踪玩家，尝试对齐后射击，会躲避子弹
 int* ai_aggressive(int state, bool cflag, float ex, float ey)
 {
 	static int a[2];
@@ -2094,39 +2213,58 @@ int* ai_aggressive(int state, bool cflag, float ex, float ey)
 		}
 	}
 
-	if (cflag)
+	//优先闪避来袭子弹
+	int dodge = DetectIncomingBullet(ex, ey);
+	if (dodge >= 0 && rand() % 2 == 0)
 	{
-		//碰墙时高概率射击
-		if (rand() % 3 == 0)
-		{
-			a[0] = state;
-			a[1] = 1;
-			return a;
-		}
-		//碰墙时70%朝向玩家，30%随机
-		if (rand() % 10 < 7)
-			a[0] = DirToward(ex, ey, targetX, targetY);
-		else
-			a[0] = rand() % 4;
+		a[0] = dodge;
 		a[1] = 0;
 		return a;
 	}
-	//频繁射击（约每50帧1次）
-	if (rand() % 50 == 0)
+
+	//如果已面对玩家，射击！
+	if (IsFacingAnyPlayer(state, ex, ey))
 	{
 		a[0] = state;
 		a[1] = 1;
 		return a;
 	}
-	//较高概率追踪玩家方向
-	if (rand() % 40 == 0)
+
+	if (cflag)
 	{
+		//碰墙时：尝试侧移对齐玩家
+		int axis = rand() % 2;
+		a[0] = GetFlankDir(ex, ey, targetX, targetY, axis);
+		a[1] = 0;
+		return a;
+	}
+
+	//战术移动：尝试与玩家对齐到同一行/列
+	float dx = abs(ex - targetX);
+	float dy = abs(ey - targetY);
+	if (rand() % 20 == 0)
+	{
+		//如果横向接近对齐，纵向移动靠近
+		if (dx < 40)
+		{
+			a[0] = ey > targetY ? Dirction::up : Dirction::below;
+			a[1] = 0;
+			return a;
+		}
+		//如果纵向接近对齐，横向移动靠近
+		if (dy < 40)
+		{
+			a[0] = ex > targetX ? Dirction::lift : Dirction::right;
+			a[1] = 0;
+			return a;
+		}
+		//否则朝玩家方向移动
 		a[0] = DirToward(ex, ey, targetX, targetY);
 		a[1] = 0;
 		return a;
 	}
-	//偶尔随机变向增加不可预测性
-	if (rand() % 100 == 0)
+	//偶尔随机变向（避免卡死）
+	if (rand() % 60 == 0)
 	{
 		a[0] = rand() % 4;
 		a[1] = 0;
@@ -2137,35 +2275,51 @@ int* ai_aggressive(int state, bool cflag, float ex, float ey)
 	return a;
 }
 
-// Grade 4-5: 快速型AI
-// 频繁变向，到处乱窜，射击中等频率
-int* ai_fast(int state, bool cflag)
+// Grade 4-5: 游击型AI
+// 快速移动，躲避子弹优先，hit-and-run战术
+int* ai_fast(int state, bool cflag, float ex, float ey)
 {
 	static int a[2];
-	if (cflag)
+
+	//高优先级闪避子弹（反应灵敏）
+	int dodge = DetectIncomingBullet(ex, ey);
+	if (dodge >= 0)
 	{
-		//碰墙时立即转向，偶尔射击
-		if (rand() % 5 == 0)
+		a[0] = dodge;
+		a[1] = 0;
+		return a;
+	}
+
+	//面对玩家时果断射击然后立即变向（打一枪换一个地方）
+	if (IsFacingAnyPlayer(state, ex, ey))
+	{
+		if (rand() % 3 == 0)
 		{
+			//射击后变向撤退
 			a[0] = state;
 			a[1] = 1;
 			return a;
 		}
+	}
+
+	if (cflag)
+	{
+		//碰墙后快速选择新方向
 		a[0] = rand() % 4;
 		a[1] = 0;
 		return a;
 	}
-	//中等频率射击
-	if (rand() % 70 == 0)
+
+	//频繁变向（难以预测）
+	if (rand() % 15 == 0)
 	{
-		a[0] = state;
-		a[1] = 1;
-		return a;
-	}
-	//非常频繁地随机变向（闪避型移动）
-	if (rand() % 25 == 0)
-	{
-		a[0] = rand() % 4;
+		//有一定概率朝向玩家方向机动
+		float targetX = Player1.player.x;
+		float targetY = Player1.player.y;
+		if (rand() % 3 == 0)
+			a[0] = DirToward(ex, ey, targetX, targetY);
+		else
+			a[0] = rand() % 4;
 		a[1] = 0;
 		return a;
 	}
@@ -2175,7 +2329,7 @@ int* ai_fast(int state, bool cflag)
 }
 
 // Grade 6-7: 重型/智能AI
-// 以基地为目标，高HP，破坏力强，会主动摧毁挡路的墙
+// 以基地为目标，有计划地推进，清除路径上的障碍
 int* ai_heavy(int state, bool cflag, float ex, float ey)
 {
 	static int a[2];
@@ -2183,22 +2337,44 @@ int* ai_heavy(int state, bool cflag, float ex, float ey)
 	float targetX = (float)FlagGameX;
 	float targetY = (float)FlagGameY;
 
+	//中等概率闪避子弹（体型大，不太灵活）
+	if (rand() % 4 == 0)
+	{
+		int dodge = DetectIncomingBullet(ex, ey);
+		if (dodge >= 0)
+		{
+			a[0] = dodge;
+			a[1] = 0;
+			return a;
+		}
+	}
+
 	if (cflag)
 	{
-		//碰墙时必定射击（清除障碍）
-		a[0] = state;
-		a[1] = 1;
+		//碰墙：如果面朝基地方向则射击清除障碍
+		if (IsFacingTarget(state, ex, ey, targetX, targetY, 80.0f))
+		{
+			a[0] = state;
+			a[1] = 1;
+			return a;
+		}
+		//否则侧移寻找新路径
+		int axis = rand() % 2;
+		a[0] = GetFlankDir(ex, ey, targetX, targetY, axis);
+		a[1] = 0;
 		return a;
 	}
-	//较高射击频率（清除前方障碍）
-	if (rand() % 35 == 0)
+
+	//如果面对玩家，顺带射击（不主动追玩家但不放过机会）
+	if (IsFacingAnyPlayer(state, ex, ey) && rand() % 5 == 0)
 	{
 		a[0] = state;
 		a[1] = 1;
 		return a;
 	}
-	//80%概率朝基地方向移动
-	if (rand() % 30 == 0)
+
+	//持续朝基地方向推进
+	if (rand() % 25 == 0)
 	{
 		if (rand() % 10 < 8)
 			a[0] = DirToward(ex, ey, targetX, targetY);
@@ -2207,6 +2383,15 @@ int* ai_heavy(int state, bool cflag, float ex, float ey)
 		a[1] = 0;
 		return a;
 	}
+
+	//面朝基地方向时定期射击清障
+	if (IsFacingTarget(state, ex, ey, targetX, targetY, 80.0f) && rand() % 30 == 0)
+	{
+		a[0] = state;
+		a[1] = 1;
+		return a;
+	}
+
 	a[0] = state;
 	a[1] = 0;
 	return a;
@@ -2216,11 +2401,11 @@ int* ai_heavy(int state, bool cflag, float ex, float ey)
 int* enemyAI(int grade, int state, bool cflag, float ex, float ey)
 {
 	if (grade <= 1)
-		return ai_basic(state, cflag);
+		return ai_basic(state, cflag, ex, ey);
 	else if (grade <= 3)
 		return ai_aggressive(state, cflag, ex, ey);
 	else if (grade <= 5)
-		return ai_fast(state, cflag);
+		return ai_fast(state, cflag, ex, ey);
 	else
 		return ai_heavy(state, cflag, ex, ey);
 }
